@@ -9,6 +9,7 @@ import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
 import com.marklogic.spring.batch.item.MarkLogicItemWriter;
 import com.marklogic.spring.batch.item.processor.ColumnMapProcessor;
+import com.marklogic.spring.batch.item.writer.MultipleClientItemWriter;
 import joptsimple.OptionParser;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -25,6 +26,8 @@ import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @EnableBatchProcessing
@@ -34,6 +37,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 
 	@Override
 	public void configureOptionParser(OptionParser parser) {
+		parser.accepts("hosts", "Comma-delimited sequence of host names of MarkLogic nodes to write documents to").withRequiredArg();
 		parser.accepts("sql", "The SQL query for selecting rows to migrate").withRequiredArg();
 		parser.accepts("rootLocalName", "Name of the root element in each document written to MarkLogic").withRequiredArg();
 		parser.accepts("rootNamepaceUri", "Namespace URI of the root element in each document written to MarkLogic").withRequiredArg();
@@ -47,6 +51,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	@Bean
 	@JobScope
 	public Step step(StepBuilderFactory stepBuilderFactory,
+	                 @Value("#{jobParameters['hosts']}") String hosts,
 	                 @Value("#{jobParameters['sql']}") String sql,
 	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
 
@@ -67,9 +72,23 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		}
 
 		// Writer TODO Parallelize
-		DatabaseClient client = DatabaseClientFactory.newClient("localhost", 8000, "admin", "admin",
-			DatabaseClientFactory.Authentication.DIGEST);
-		MarkLogicItemWriter writer = new MarkLogicItemWriter(client);
+		Integer port = Integer.parseInt(env.getProperty(Options.PORT));
+		String username = env.getProperty(Options.USERNAME);
+		String password = env.getProperty(Options.PASSWORD);
+		List<DatabaseClient> databaseClients = new ArrayList<>();
+		if (hosts != null) {
+			for (String host : hosts.split(",")) {
+				logger.info("Creating client for host: " + host);
+				DatabaseClient client = DatabaseClientFactory.newClient(host, port, username, password, DatabaseClientFactory.Authentication.DIGEST);
+				databaseClients.add(client);
+			}
+		} else {
+			String host = env.getProperty(Options.HOST);
+			logger.info("Creating client for host: " + host);
+			DatabaseClient client = DatabaseClientFactory.newClient(host, port, username, password, DatabaseClientFactory.Authentication.DIGEST);
+			databaseClients.add(client);
+		}
+		MultipleClientItemWriter writer = new MultipleClientItemWriter(databaseClients);
 
 		// Run the job
 		return stepBuilderFactory.get("step1")
@@ -81,7 +100,6 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	}
 
 	protected DataSource buildDataSource() {
-		//logger.info("Creating simple data source based on JDBC connection options");
 		DriverManagerDataSource ds = new DriverManagerDataSource();
 		ds.setDriverClassName(env.getProperty(Options.JDBC_DRIVER));
 		ds.setUrl(env.getProperty(Options.JDBC_URL));

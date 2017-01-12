@@ -34,7 +34,7 @@ task migrate(type: JavaExec) {
 	classpath = sourceSets.main.runtimeClasspath
 	main = "com.marklogic.spring.batch.Main"
 	args = [
-		"--host", "localhost",
+		"--hosts", "localhost,localhost",
 		"--port", "8000",
 		"--username", "admin",
 		"--password", "admin",
