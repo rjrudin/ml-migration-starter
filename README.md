@@ -11,8 +11,8 @@ This project has the following defaults in place that you can use as a starting 
 1. Uses StAX to turn that Map<String, Object> into a simple XML document
 1. Uses the ML Java API to write to MarkLogic
 1. Defaults to writing to localhost/8000/admin/admin
-1. Supports writing to any number of hosts in a cluster
-1. Supports a configurable thread pool for how many threads you want writing to MarkLogic
+1. Supports writing to any number of hosts in a cluster (once ML9 is out, we can use [DMSDK](https://github.com/marklogic/data-movement) for this instead)
+1. Supports a configurable thread pool for how many threads you want writing to MarkLogic (another feature DMSDK will provide with ML9)
 1. Has a Gradle task for launching the migration - "./gradlew migrate"
 
 To try this out locally, just do the following:
