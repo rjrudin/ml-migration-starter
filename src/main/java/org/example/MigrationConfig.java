@@ -36,6 +36,8 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 
 	@Override
 	public void configureOptionParser(OptionParser parser) {
+		parser.accepts("chunkSize", "Size of Spring Batch chunk; controls how many rows are read at once");
+		parser.accepts("collections", "Comma-delimited sequence of collections to insert each document into").withRequiredArg();
 		parser.accepts("hosts", "Comma-delimited sequence of host names of MarkLogic nodes to write documents to").withRequiredArg();
 		parser.accepts("rootLocalName", "Name of the root element in each document written to MarkLogic").withRequiredArg();
 		parser.accepts("rootNamepaceUri", "Namespace URI of the root element in each document written to MarkLogic").withRequiredArg();
@@ -51,13 +53,19 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	@Bean
 	@JobScope
 	public Step step(StepBuilderFactory stepBuilderFactory,
+	                 @Value("#{jobParameters['chunkSize']}") Integer chunkSize,
+	                 @Value("#{jobParameters['collections']}") String collections,
 	                 @Value("#{jobParameters['hosts']}") String hosts,
 	                 @Value("#{jobParameters['threadCount']}") Integer threadCount,
 	                 @Value("#{jobParameters['sql']}") String sql,
 	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
 
+		logger.info("Chunk size: " + chunkSize);
+		logger.info("Hosts: " + hosts);
 		logger.info("SQL: " + sql);
-		logger.info("rootLocalName: " + rootLocalName);
+		logger.info("Root local name: " + rootLocalName);
+		logger.info("Collections: " + collections);
+		logger.info("Thread count: " + threadCount);
 
 		// Reader
 		JdbcCursorItemReader<Map<String, Object>> reader = new JdbcCursorItemReader<Map<String, Object>>();
@@ -70,6 +78,9 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		ColumnMapProcessor processor = new ColumnMapProcessor(new DefaultStaxColumnMapSerializer());
 		if (rootLocalName != null) {
 			processor.setRootLocalName(rootLocalName);
+		}
+		if (collections != null) {
+			processor.setCollections(collections.split(","));
 		}
 
 		// Writer TODO Parallelize
@@ -94,9 +105,12 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 			writer.setThreadCount(threadCount);
 		}
 
+		if (chunkSize == null || chunkSize < 0) {
+			chunkSize = 100;
+		}
 		// Run the job
 		return stepBuilderFactory.get("step1")
-			.<Map<String, Object>, DocumentWriteOperation>chunk(100)
+			.<Map<String, Object>, DocumentWriteOperation>chunk(chunkSize)
 			.reader(reader)
 			.processor(processor)
 			.writer(writer)

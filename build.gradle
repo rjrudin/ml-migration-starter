@@ -35,16 +35,18 @@ task migrate(type: JavaExec) {
 	main = "org.example.MigrationMain"
 	args = [
 		"--config", "org.example.MigrationConfig",
-		"--hosts", migrationHosts,
-		"--port", "8000",
-		"--username", "admin",
-		"--password", migrationPassword,
-		"--threadCount", migrationThreadCount,
-		"--jdbc_driver", "com.mysql.jdbc.Driver",
-		"--jdbc_url", "jdbc:mysql://localhost:3306/sakila",
-		"--jdbc_username", "root",
-		"--jdbc_password", "admin",
-		"--sql", "SELECT * FROM actor",
-		"--rootLocalName", "Actor"
+		"--chunkSize", chunkSize,
+		"--hosts", hosts,
+		"--port", port,
+		"--username", username,
+		"--password", password,
+		"--threadCount", threadCount,
+		"--jdbc_driver", jdbcDriver,
+		"--jdbc_url", jdbcUrl,
+		"--jdbc_username", jdbcUsername,
+		"--jdbc_password", jdbcPassword,
+		"--sql", sql,
+		"--rootLocalName", rootLocalName,
+		"--collections", collections
 	]
 }

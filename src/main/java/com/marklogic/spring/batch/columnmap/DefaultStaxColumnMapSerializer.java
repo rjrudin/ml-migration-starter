@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * COPIED from
+ * COPY/PASTED from rowToDoc. Should probably live in marklogic-spring-batch.
  */
 public class DefaultStaxColumnMapSerializer extends LoggingObject implements ColumnMapSerializer {
 

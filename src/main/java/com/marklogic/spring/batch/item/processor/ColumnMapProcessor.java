@@ -23,13 +23,17 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 	@Override
 	public MarkLogicWriteHandle process(Map<String, Object> item) throws Exception {
 		String content = columnMapSerializer.serializeColumnMap(item, rootLocalName);
+
 		// TODO Use UriGenerator
 		String uuid = UUID.randomUUID().toString();
-		return new MarkLogicWriteHandle(
-			uuid + ".xml",
-			new DocumentMetadataHandle().withCollections("CHANGEME"),
-			new StringHandle(content)
-		);
+		String uri = "/" + rootLocalName + "/" + uuid + ".xml";
+
+		DocumentMetadataHandle metadata = new DocumentMetadataHandle();
+		if (collections != null) {
+			metadata.withCollections(collections);
+		}
+
+		return new MarkLogicWriteHandle(uri, metadata, new StringHandle(content));
 	}
 
 	public void setRootLocalName(String rootLocalName) {

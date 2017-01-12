@@ -6,6 +6,7 @@ public class MigrationMain extends com.marklogic.spring.batch.Main {
 
 	public static void main(String[] args) throws Exception {
 		new MigrationMain().runJob(args);
+		System.exit(0);
 	}
 
 	/**

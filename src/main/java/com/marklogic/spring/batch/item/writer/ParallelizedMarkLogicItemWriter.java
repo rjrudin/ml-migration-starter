@@ -5,6 +5,8 @@ import com.marklogic.client.document.DocumentWriteOperation;
 import com.marklogic.client.document.DocumentWriteSet;
 import com.marklogic.client.document.GenericDocumentManager;
 import com.marklogic.client.helper.LoggingObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemStream;
 import org.springframework.batch.item.ItemStreamException;
@@ -23,6 +25,8 @@ import java.util.concurrent.TimeUnit;
  * This is meant for ML clusters prior to ML9, which can't take advantage of the great features in DMSDK for
  * parallelizing writes to an ML cluster. It will round robin requests across a list of DatabaseClient's, and it'll
  * delegate all the work to a thread pool of a configurable size.
+ *
+ * TODO Contribute this back into marklogic-spring-batch.
  */
 public class ParallelizedMarkLogicItemWriter extends LoggingObject implements ItemWriter<DocumentWriteOperation>, ItemStream {
 
@@ -44,11 +48,8 @@ public class ParallelizedMarkLogicItemWriter extends LoggingObject implements It
 		if (clientIndex >= databaseClients.size()) {
 			clientIndex = 0;
 		}
-		if (logger.isInfoEnabled()) {
-			logger.info("Writing " + items.size() + " documents to MarkLogic");
-		}
 
-		Runnable r = new BatchWriter(client, items);
+		BatchWriter r = new BatchWriter(client, items);
 		if (taskExecutor instanceof AsyncTaskExecutor) {
 			futures.add(((AsyncTaskExecutor) taskExecutor).submit(r));
 		} else {
@@ -76,14 +77,29 @@ public class ParallelizedMarkLogicItemWriter extends LoggingObject implements It
 
 	@Override
 	public void close() throws ItemStreamException {
-		logger.info("Waiting for threads to finish document processing; futures count: " + futures.size());
-		for (Future<?> f : futures) {
+		int size = futures.size();
+		if (logger.isDebugEnabled()) {
+			logger.debug("Waiting for threads to finish document processing; futures count: " + size);
+		}
+
+		for (int i = 0; i < size; i++) {
+			Future<?> f = futures.get(i);
+			if (f.isDone()) {
+				continue;
+			}
 			try {
-				f.get(10, TimeUnit.HOURS);
+				// Wait up to 1 hour for a write to ML to finish (should never happen)
+				f.get(1, TimeUnit.HOURS);
 			} catch (Exception ex) {
 				logger.warn("Unable to wait for last set of documents to be processed: " + ex.getMessage(), ex);
 			}
 		}
+
+		logger.info("Releasing DatabaseClient instances...");
+		for (DatabaseClient client : databaseClients) {
+			client.release();
+		}
+		logger.info("Finished writing data to MarkLogic!");
 	}
 
 	@Override
@@ -97,6 +113,8 @@ public class ParallelizedMarkLogicItemWriter extends LoggingObject implements It
 }
 
 class BatchWriter implements Runnable {
+
+	private final static Logger logger = LoggerFactory.getLogger(BatchWriter.class);
 
 	private DatabaseClient client;
 	private List<? extends DocumentWriteOperation> items;
@@ -113,6 +131,13 @@ class BatchWriter implements Runnable {
 		for (DocumentWriteOperation item : items) {
 			set.add(item);
 		}
+		int count = set.size();
+		if (logger.isDebugEnabled()) {
+			logger.debug("Writing " + count + " documents to MarkLogic");
+		}
 		mgr.write(set);
+		if (logger.isInfoEnabled()) {
+			logger.info("Wrote " + count + " documents to MarkLogic");
+		}
 	}
 }
