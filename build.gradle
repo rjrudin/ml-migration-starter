@@ -1,0 +1,47 @@
+group 'com.marklogic'
+version '0.1.0'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+repositories {
+	jcenter()
+	maven { url "http://developer.marklogic.com/maven2" }
+}
+
+configurations {
+	all {
+		exclude module: 'commons-logging'
+		exclude module: 'log4j'
+	}
+}
+
+dependencies {
+	compile "com.marklogic:marklogic-spring-batch-core:0.7.4"
+	compile "org.springframework:spring-jdbc:4.3.1.RELEASE"
+	runtime "mysql:mysql-connector-java:5.1.6"
+
+	//testCompile "com.marklogic:marklogic-spring-batch-test:0.7.4"
+
+	// Forcing Spring to use logback
+	runtime "ch.qos.logback:logback-classic:1.1.8"
+	runtime group: "org.slf4j", name: "jcl-over-slf4j", version: "1.7.22"
+	runtime group: "org.slf4j", name: "slf4j-api", version: "1.7.22"
+}
+
+task migrate(type: JavaExec) {
+	classpath = sourceSets.main.runtimeClasspath
+	main = "com.marklogic.spring.batch.Main"
+	args = [
+		"--host", "localhost",
+		"--port", "8000",
+		"--username", "admin",
+		"--password", "admin",
+		"--config", "org.example.JobConfig",
+		"--jdbc_driver", "com.mysql.jdbc.Driver",
+		"--jdbc_url", "jdbc:mysql://localhost:3306/sakila",
+		"--jdbc_username", "root",
+		"--jdbc_password", "admin"
+	]
+}
