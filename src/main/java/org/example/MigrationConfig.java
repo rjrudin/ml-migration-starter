@@ -47,7 +47,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 
 	@Bean
 	public Job job(JobBuilderFactory jobBuilderFactory, Step step) {
-		return jobBuilderFactory.get("job").start(step).build();
+		return jobBuilderFactory.get("migrationJob").start(step).build();
 	}
 
 	@Bean
@@ -83,7 +83,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 			processor.setCollections(collections.split(","));
 		}
 
-		// Writer TODO Parallelize
+		// Writer
 		Integer port = Integer.parseInt(env.getProperty(Options.PORT));
 		String username = env.getProperty(Options.USERNAME);
 		String password = env.getProperty(Options.PASSWORD);
@@ -105,9 +105,11 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 			writer.setThreadCount(threadCount);
 		}
 
+		// Determine the Spring Batch chunk size
 		if (chunkSize == null || chunkSize < 0) {
 			chunkSize = 100;
 		}
+
 		// Run the job
 		return stepBuilderFactory.get("step1")
 			.<Map<String, Object>, DocumentWriteOperation>chunk(chunkSize)
