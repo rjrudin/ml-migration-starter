@@ -34,16 +34,17 @@ task migrate(type: JavaExec) {
 	classpath = sourceSets.main.runtimeClasspath
 	main = "org.example.MigrationMain"
 	args = [
-		"--hosts", mlMigrationHosts,
+		"--config", "org.example.MigrationConfig",
+		"--hosts", migrationHosts,
 		"--port", "8000",
 		"--username", "admin",
-		"--password", mlMigrationPassword,
-		"--config", "org.example.MigrationConfig",
+		"--password", migrationPassword,
+		"--threadCount", migrationThreadCount,
 		"--jdbc_driver", "com.mysql.jdbc.Driver",
 		"--jdbc_url", "jdbc:mysql://localhost:3306/sakila",
 		"--jdbc_username", "root",
 		"--jdbc_password", "admin",
-		"--sql", "SELECT * FROM film",
-		"--rootLocalName", "Film"
+		"--sql", "SELECT * FROM actor",
+		"--rootLocalName", "Actor"
 	]
 }

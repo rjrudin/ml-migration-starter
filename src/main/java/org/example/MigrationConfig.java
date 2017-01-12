@@ -7,9 +7,8 @@ import com.marklogic.client.helper.LoggingObject;
 import com.marklogic.spring.batch.Options;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
-import com.marklogic.spring.batch.item.MarkLogicItemWriter;
 import com.marklogic.spring.batch.item.processor.ColumnMapProcessor;
-import com.marklogic.spring.batch.item.writer.MultipleClientItemWriter;
+import com.marklogic.spring.batch.item.writer.ParallelizedMarkLogicItemWriter;
 import joptsimple.OptionParser;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -38,9 +37,10 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	@Override
 	public void configureOptionParser(OptionParser parser) {
 		parser.accepts("hosts", "Comma-delimited sequence of host names of MarkLogic nodes to write documents to").withRequiredArg();
-		parser.accepts("sql", "The SQL query for selecting rows to migrate").withRequiredArg();
 		parser.accepts("rootLocalName", "Name of the root element in each document written to MarkLogic").withRequiredArg();
 		parser.accepts("rootNamepaceUri", "Namespace URI of the root element in each document written to MarkLogic").withRequiredArg();
+		parser.accepts("sql", "The SQL query for selecting rows to migrate").withRequiredArg();
+		parser.accepts("threadCount", "The number of threads to use for writing to MarkLogic").withRequiredArg();
 	}
 
 	@Bean
@@ -52,6 +52,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	@JobScope
 	public Step step(StepBuilderFactory stepBuilderFactory,
 	                 @Value("#{jobParameters['hosts']}") String hosts,
+	                 @Value("#{jobParameters['threadCount']}") Integer threadCount,
 	                 @Value("#{jobParameters['sql']}") String sql,
 	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
 
@@ -88,7 +89,10 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 			DatabaseClient client = DatabaseClientFactory.newClient(host, port, username, password, DatabaseClientFactory.Authentication.DIGEST);
 			databaseClients.add(client);
 		}
-		MultipleClientItemWriter writer = new MultipleClientItemWriter(databaseClients);
+		ParallelizedMarkLogicItemWriter writer = new ParallelizedMarkLogicItemWriter(databaseClients);
+		if (threadCount != null && threadCount > 0) {
+			writer.setThreadCount(threadCount);
+		}
 
 		// Run the job
 		return stepBuilderFactory.get("step1")
