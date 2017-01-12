@@ -13,6 +13,8 @@ import java.util.UUID;
 public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, DocumentWriteOperation> {
 
 	private ColumnMapSerializer columnMapSerializer;
+	private String rootLocalName = "CHANGEME";
+	private String[] collections;
 
 	public ColumnMapProcessor(ColumnMapSerializer columnMapSerializer) {
 		this.columnMapSerializer = columnMapSerializer;
@@ -20,12 +22,21 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 
 	@Override
 	public MarkLogicWriteHandle process(Map<String, Object> item) throws Exception {
-		String content = columnMapSerializer.serializeColumnMap(item, "CHANGEME", "");
+		String content = columnMapSerializer.serializeColumnMap(item, rootLocalName);
+		// TODO Use UriGenerator
 		String uuid = UUID.randomUUID().toString();
 		return new MarkLogicWriteHandle(
 			uuid + ".xml",
 			new DocumentMetadataHandle().withCollections("CHANGEME"),
 			new StringHandle(content)
 		);
+	}
+
+	public void setRootLocalName(String rootLocalName) {
+		this.rootLocalName = rootLocalName;
+	}
+
+	public void setCollections(String[] collections) {
+		this.collections = collections;
 	}
 }

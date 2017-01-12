@@ -11,5 +11,5 @@ import java.util.Map;
  */
 public interface ColumnMapSerializer {
 
-    String serializeColumnMap(Map<String, Object> columnMap, String rootLocalName, String rootNamespaceUri);
+    String serializeColumnMap(Map<String, Object> columnMap, String rootLocalName);
 }

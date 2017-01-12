@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Default implementation that uses the Stax library to create an XML structure. Any XML library, or even a templating
- * engine like Velocity/Freemarker, could be used here instead.
+ * COPIED from
  */
 public class DefaultStaxColumnMapSerializer extends LoggingObject implements ColumnMapSerializer {
 
@@ -22,7 +21,7 @@ public class DefaultStaxColumnMapSerializer extends LoggingObject implements Col
     }
 
     @Override
-    public String serializeColumnMap(Map<String, Object> columnMap, String rootLocalName, String rootNamespaceUri) {
+    public String serializeColumnMap(Map<String, Object> columnMap, String rootLocalName) {
         StringWriter out = new StringWriter();
         try {
             XMLStreamWriter sw = xmlOutputFactory.createXMLStreamWriter(out);
@@ -39,7 +38,7 @@ public class DefaultStaxColumnMapSerializer extends LoggingObject implements Col
     /**
      * Recursive function that will call itself when it finds that the value of a key/value pair in the column map is a
      * Map<String, Object> itself.
-     * 
+     *
      * @param columnMap
      * @param sw
      * @throws XMLStreamException

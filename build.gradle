@@ -38,10 +38,12 @@ task migrate(type: JavaExec) {
 		"--port", "8000",
 		"--username", "admin",
 		"--password", "admin",
-		"--config", "org.example.JobConfig",
+		"--config", "org.example.MigrationConfig",
 		"--jdbc_driver", "com.mysql.jdbc.Driver",
 		"--jdbc_url", "jdbc:mysql://localhost:3306/sakila",
 		"--jdbc_username", "root",
-		"--jdbc_password", "admin"
+		"--jdbc_password", "admin",
+		"--sql", "SELECT * FROM actor",
+		"--rootLocalName", "Actor"
 	]
 }
