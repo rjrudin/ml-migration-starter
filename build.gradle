@@ -32,16 +32,21 @@ dependencies {
 
 task migrate(type: JavaExec) {
 	classpath = sourceSets.main.runtimeClasspath
-	main = "com.marklogic.spring.batch.Main"
+	main = "org.example.MigrationMain"
 	args = [
-		"--host", "localhost",
-		"--port", "8000",
-		"--username", "admin",
-		"--password", "admin",
-		"--config", "org.example.JobConfig",
-		"--jdbc_driver", "com.mysql.jdbc.Driver",
-		"--jdbc_url", "jdbc:mysql://localhost:3306/sakila",
-		"--jdbc_username", "root",
-		"--jdbc_password", "admin"
+		"--config", "org.example.MigrationConfig",
+		"--chunkSize", chunkSize,
+		"--hosts", hosts,
+		"--port", port,
+		"--username", username,
+		"--password", password,
+		"--threadCount", threadCount,
+		"--jdbc_driver", jdbcDriver,
+		"--jdbc_url", jdbcUrl,
+		"--jdbc_username", jdbcUsername,
+		"--jdbc_password", jdbcPassword,
+		"--sql", sql,
+		"--rootLocalName", rootLocalName,
+		"--collections", collections
 	]
 }
