@@ -47,6 +47,7 @@ task migrate(type: JavaExec) {
 		"--jdbc_password", jdbcPassword,
 		"--sql", sql,
 		"--rootLocalName", rootLocalName,
-		"--collections", collections
+		"--collections", collections,
+		"--permissions", permissions
 	]
 }

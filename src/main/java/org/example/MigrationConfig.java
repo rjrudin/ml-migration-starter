@@ -55,6 +55,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	public Step step(StepBuilderFactory stepBuilderFactory,
 	                 @Value("#{jobParameters['chunkSize']}") Integer chunkSize,
 	                 @Value("#{jobParameters['collections']}") String collections,
+	                 @Value("#{jobParameters['permissions']}") String permissions,
 	                 @Value("#{jobParameters['hosts']}") String hosts,
 	                 @Value("#{jobParameters['threadCount']}") Integer threadCount,
 	                 @Value("#{jobParameters['sql']}") String sql,
@@ -65,6 +66,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		logger.info("SQL: " + sql);
 		logger.info("Root local name: " + rootLocalName);
 		logger.info("Collections: " + collections);
+		logger.info("Permissions: " + permissions);
 		logger.info("Thread count: " + threadCount);
 
 		// Reader
@@ -81,6 +83,9 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		}
 		if (collections != null) {
 			processor.setCollections(collections.split(","));
+		}
+		if (permissions != null) {
+			processor.setPermissions(permissions.split(","));
 		}
 
 		// Writer

@@ -14,6 +14,10 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 
 	private ColumnMapSerializer columnMapSerializer;
 	private String rootLocalName = "CHANGEME";
+
+	// Expected to be role,capability,role,capability,etc.
+	private String[] permissions;
+
 	private String[] collections;
 
 	public ColumnMapProcessor(ColumnMapSerializer columnMapSerializer) {
@@ -33,6 +37,14 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 			metadata.withCollections(collections);
 		}
 
+		if (permissions != null) {
+			for (int i = 0; i < permissions.length; i += 2) {
+				String role = permissions[i];
+				DocumentMetadataHandle.Capability c = DocumentMetadataHandle.Capability.valueOf(permissions[i + 1].toUpperCase());
+				metadata.withPermission(role, c);
+			}
+		}
+
 		return new MarkLogicWriteHandle(uri, metadata, new StringHandle(content));
 	}
 
@@ -42,5 +54,9 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 
 	public void setCollections(String[] collections) {
 		this.collections = collections;
+	}
+
+	public void setPermissions(String[] permissions) {
+		this.permissions = permissions;
 	}
 }
