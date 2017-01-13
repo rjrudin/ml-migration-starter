@@ -35,11 +35,13 @@ task migrate(type: JavaExec) {
 	main = "org.example.MigrationMain"
 	args = [
 		"--config", "org.example.MigrationConfig",
-		"--chunkSize", chunkSize,
+		"--chunk", chunk,
 		"--hosts", hosts,
 		"--port", port,
 		"--username", username,
 		"--password", password,
+		"--database", database,
+		"--auth", auth,
 		"--threadCount", threadCount,
 		"--jdbc_driver", jdbcDriver,
 		"--jdbc_url", jdbcUrl,
@@ -49,5 +51,14 @@ task migrate(type: JavaExec) {
 		"--rootLocalName", rootLocalName,
 		"--collections", collections,
 		"--permissions", permissions
+	]
+}
+
+task help(type: JavaExec) {
+	classpath = sourceSets.main.runtimeClasspath
+	main = "org.example.MigrationMain"
+	args = [
+		"--config", "org.example.MigrationConfig",
+		"--help"
 	]
 }

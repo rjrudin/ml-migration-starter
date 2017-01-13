@@ -52,4 +52,8 @@ The default configuration is all in gradle.properties. You can modify those on t
     
 Or just modify the file and start building your own migration. 
 
+You can also see all the supported arguments:
+
+    ./gradlew help
+
 Comments,questions - please file an issue.

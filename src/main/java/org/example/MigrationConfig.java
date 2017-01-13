@@ -3,6 +3,7 @@ package org.example;
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.document.DocumentWriteOperation;
+import com.marklogic.client.helper.DatabaseClientConfig;
 import com.marklogic.client.helper.LoggingObject;
 import com.marklogic.spring.batch.Options;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
@@ -36,7 +37,6 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 
 	@Override
 	public void configureOptionParser(OptionParser parser) {
-		parser.accepts("chunkSize", "Size of Spring Batch chunk; controls how many rows are read at once");
 		parser.accepts("collections", "Comma-delimited sequence of collections to insert each document into").withRequiredArg();
 		parser.accepts("hosts", "Comma-delimited sequence of host names of MarkLogic nodes to write documents to").withRequiredArg();
 		parser.accepts("permissions", "Comma-delimited sequence of permissions to apply to each document; role,capability,role,capability,etc").withRequiredArg();
@@ -54,7 +54,6 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	@Bean
 	@JobScope
 	public Step step(StepBuilderFactory stepBuilderFactory,
-	                 @Value("#{jobParameters['chunkSize']}") Integer chunkSize,
 	                 @Value("#{jobParameters['collections']}") String collections,
 	                 @Value("#{jobParameters['permissions']}") String permissions,
 	                 @Value("#{jobParameters['hosts']}") String hosts,
@@ -62,7 +61,14 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	                 @Value("#{jobParameters['sql']}") String sql,
 	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
 
-		logger.info("Chunk size: " + chunkSize);
+		// Determine the Spring Batch chunk size
+		int chunkSize = 100;
+		String prop = env.getProperty(Options.CHUNK_SIZE);
+		if (prop != null) {
+			chunkSize = Integer.parseInt(prop);
+		}
+
+		logger.info("Chunk size: " + env.getProperty(Options.CHUNK_SIZE));
 		logger.info("Hosts: " + hosts);
 		logger.info("SQL: " + sql);
 		logger.info("Root local name: " + rootLocalName);
@@ -90,30 +96,10 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		}
 
 		// Writer
-		Integer port = Integer.parseInt(env.getProperty(Options.PORT));
-		String username = env.getProperty(Options.USERNAME);
-		String password = env.getProperty(Options.PASSWORD);
-		List<DatabaseClient> databaseClients = new ArrayList<>();
-		if (hosts != null) {
-			for (String host : hosts.split(",")) {
-				logger.info("Creating client for host: " + host);
-				DatabaseClient client = DatabaseClientFactory.newClient(host, port, username, password, DatabaseClientFactory.Authentication.DIGEST);
-				databaseClients.add(client);
-			}
-		} else {
-			String host = env.getProperty(Options.HOST);
-			logger.info("Creating client for host: " + host);
-			DatabaseClient client = DatabaseClientFactory.newClient(host, port, username, password, DatabaseClientFactory.Authentication.DIGEST);
-			databaseClients.add(client);
-		}
+		List<DatabaseClient> databaseClients = buildDatabaseClients(hosts);
 		ParallelizedMarkLogicItemWriter writer = new ParallelizedMarkLogicItemWriter(databaseClients);
 		if (threadCount != null && threadCount > 0) {
 			writer.setThreadCount(threadCount);
-		}
-
-		// Determine the Spring Batch chunk size
-		if (chunkSize == null || chunkSize < 0) {
-			chunkSize = 100;
 		}
 
 		// Run the job
@@ -123,6 +109,36 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 			.processor(processor)
 			.writer(writer)
 			.build();
+	}
+
+	protected List<DatabaseClient> buildDatabaseClients(String hosts) {
+		Integer port = Integer.parseInt(env.getProperty(Options.PORT));
+		String username = env.getProperty(Options.USERNAME);
+		String password = env.getProperty(Options.PASSWORD);
+		String database = env.getProperty(Options.DATABASE);
+		String auth = env.getProperty(Options.AUTHENTICATION);
+		DatabaseClientFactory.Authentication authentication = DatabaseClientFactory.Authentication.DIGEST;
+		if (auth != null) {
+			authentication = DatabaseClientFactory.Authentication.valueOf(auth.toUpperCase());
+		}
+
+		logger.info("Client username: " + username);
+		logger.info("Client database: " + database);
+		logger.info("Client authentication: " + authentication.name());
+
+		List<DatabaseClient> databaseClients = new ArrayList<>();
+		if (hosts != null) {
+			for (String host : hosts.split(",")) {
+				logger.info("Creating client for host: " + host);
+				databaseClients.add(DatabaseClientFactory.newClient(host, port, database, username, password, authentication));
+			}
+		} else {
+			String host = env.getProperty(Options.HOST);
+			logger.info("Creating client for host: " + host);
+			databaseClients.add(DatabaseClientFactory.newClient(host, port, database, username, password, authentication));
+		}
+
+		return databaseClients;
 	}
 
 	protected DataSource buildDataSource() {
