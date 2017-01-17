@@ -1,9 +1,4 @@
-group 'com.marklogic'
-version '0.1.0'
-
 apply plugin: 'java'
-
-sourceCompatibility = 1.7
 
 repositories {
 	jcenter()
@@ -20,9 +15,12 @@ configurations {
 dependencies {
 	compile "com.marklogic:marklogic-spring-batch-core:0.7.4"
 	compile "org.springframework:spring-jdbc:4.3.1.RELEASE"
+
+	// Example of pulling MySQL's JDBC driver from a public Maven repo
 	runtime "mysql:mysql-connector-java:5.1.6"
 
-	//testCompile "com.marklogic:marklogic-spring-batch-test:0.7.4"
+	// Can reference a local JDBC driver like this (Oracle, along with others, do not publish their JDBC driver to a public repo)
+	// runtime files("./path/to/ojdbc-6.jar")
 
 	// Forcing Spring to use logback
 	runtime "ch.qos.logback:logback-classic:1.1.8"
@@ -55,6 +53,7 @@ task migrate(type: JavaExec) {
 }
 
 task help(type: JavaExec) {
+	description = "See a list of all supported command line arguments"
 	classpath = sourceSets.main.runtimeClasspath
 	main = "org.example.MigrationMain"
 	args = [
