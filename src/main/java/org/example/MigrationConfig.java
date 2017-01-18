@@ -10,6 +10,8 @@ import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
 import com.marklogic.spring.batch.item.processor.ColumnMapProcessor;
 import com.marklogic.spring.batch.item.writer.ParallelizedMarkLogicItemWriter;
+import com.marklogic.xcc.ContentSource;
+import com.marklogic.xcc.ContentSourceFactory;
 import joptsimple.OptionParser;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -24,6 +26,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -44,6 +47,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		parser.accepts("rootNamepaceUri", "Namespace URI of the root element in each document written to MarkLogic").withRequiredArg();
 		parser.accepts("sql", "The SQL query for selecting rows to migrate").withRequiredArg();
 		parser.accepts("threadCount", "The number of threads to use for writing to MarkLogic").withRequiredArg();
+		parser.accepts("xcc", "Set to 'true' to use XCC instead of the REST API to write to MarkLogic").withRequiredArg();
 	}
 
 	@Bean
@@ -54,6 +58,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	@Bean
 	@JobScope
 	public Step step(StepBuilderFactory stepBuilderFactory,
+	                 @Value("#{jobParameters['xcc']}") String xcc,
 	                 @Value("#{jobParameters['collections']}") String collections,
 	                 @Value("#{jobParameters['permissions']}") String permissions,
 	                 @Value("#{jobParameters['hosts']}") String hosts,
@@ -96,8 +101,13 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		}
 
 		// Writer
-		List<DatabaseClient> databaseClients = buildDatabaseClients(hosts);
-		ParallelizedMarkLogicItemWriter writer = new ParallelizedMarkLogicItemWriter(databaseClients);
+		ParallelizedMarkLogicItemWriter writer;
+		if ("true".equals(xcc)) {
+			writer = new ParallelizedMarkLogicItemWriter();
+			writer.setContentSources(buildContentSources(hosts));
+		} else {
+			writer = new ParallelizedMarkLogicItemWriter(buildDatabaseClients(hosts));
+		}
 		if (threadCount != null && threadCount > 0) {
 			writer.setThreadCount(threadCount);
 		}
@@ -109,6 +119,27 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 			.processor(processor)
 			.writer(writer)
 			.build();
+	}
+
+	protected List<ContentSource> buildContentSources(String hosts) {
+		Integer port = Integer.parseInt(env.getProperty(Options.PORT));
+		String username = env.getProperty(Options.USERNAME);
+		String password = env.getProperty(Options.PASSWORD);
+		String database = env.getProperty(Options.DATABASE);
+		logger.info("XCC username: " + username);
+		logger.info("XCC database: " + database);
+		List<ContentSource> list = new ArrayList<>();
+		if (hosts != null) {
+			for (String host : hosts.split(",")) {
+				logger.info("Creating content source for host: " + host);
+				list.add(ContentSourceFactory.newContentSource(host, port, username, password, database));
+			}
+		} else {
+			String host = env.getProperty(Options.HOST);
+			logger.info("Creating content source for host: " + host);
+			list.add(ContentSourceFactory.newContentSource(host, port, username, password, database));
+		}
+		return list;
 	}
 
 	protected List<DatabaseClient> buildDatabaseClients(String hosts) {

@@ -5,6 +5,11 @@ import com.marklogic.client.document.DocumentWriteOperation;
 import com.marklogic.client.document.DocumentWriteSet;
 import com.marklogic.client.document.GenericDocumentManager;
 import com.marklogic.client.helper.LoggingObject;
+import com.marklogic.client.io.DocumentMetadataHandle;
+import com.marklogic.client.io.StringHandle;
+import com.marklogic.client.io.marker.DocumentMetadataWriteHandle;
+import com.marklogic.xcc.*;
+import com.marklogic.xcc.exceptions.RequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.item.ExecutionContext;
@@ -31,6 +36,8 @@ import java.util.concurrent.TimeUnit;
 public class ParallelizedMarkLogicItemWriter extends LoggingObject implements ItemWriter<DocumentWriteOperation>, ItemStream {
 
 	private List<DatabaseClient> databaseClients;
+	private List<ContentSource> contentSources;
+
 	private int clientIndex = 0;
 
 	private TaskExecutor taskExecutor;
@@ -41,19 +48,30 @@ public class ParallelizedMarkLogicItemWriter extends LoggingObject implements It
 		this.databaseClients = databaseClients;
 	}
 
+	public ParallelizedMarkLogicItemWriter() {
+	}
+
 	@Override
 	public void write(List<? extends DocumentWriteOperation> items) throws Exception {
-		DatabaseClient client = databaseClients.get(clientIndex);
-		clientIndex++;
-		if (clientIndex >= databaseClients.size()) {
-			clientIndex = 0;
+		BatchWriter writer;
+		if (databaseClients != null) {
+			writer = new BatchWriter(databaseClients.get(clientIndex), items);
+			clientIndex++;
+			if (clientIndex >= databaseClients.size()) {
+				clientIndex = 0;
+			}
 		}
-
-		BatchWriter r = new BatchWriter(client, items);
+		else {
+			writer = new BatchWriter(contentSources.get(clientIndex), items);
+			clientIndex++;
+			if (clientIndex >= contentSources.size()) {
+				clientIndex = 0;
+			}
+		}
 		if (taskExecutor instanceof AsyncTaskExecutor) {
-			futures.add(((AsyncTaskExecutor) taskExecutor).submit(r));
+			futures.add(((AsyncTaskExecutor) taskExecutor).submit(writer));
 		} else {
-			taskExecutor.execute(r);
+			taskExecutor.execute(writer);
 		}
 	}
 
@@ -95,11 +113,13 @@ public class ParallelizedMarkLogicItemWriter extends LoggingObject implements It
 			}
 		}
 
-		logger.info("Releasing DatabaseClient instances...");
-		for (DatabaseClient client : databaseClients) {
-			client.release();
+		if (databaseClients != null) {
+			logger.info("Releasing DatabaseClient instances...");
+			for (DatabaseClient client : databaseClients) {
+				client.release();
+			}
+			logger.info("Finished writing data to MarkLogic!");
 		}
-		logger.info("Finished writing data to MarkLogic!");
 	}
 
 	@Override
@@ -110,6 +130,11 @@ public class ParallelizedMarkLogicItemWriter extends LoggingObject implements It
 	public void setThreadCount(int threadCount) {
 		this.threadCount = threadCount;
 	}
+
+	public void setContentSources(List<ContentSource> contentSources) {
+		this.contentSources = contentSources;
+	}
+
 }
 
 class BatchWriter implements Runnable {
@@ -117,6 +142,7 @@ class BatchWriter implements Runnable {
 	private final static Logger logger = LoggerFactory.getLogger(BatchWriter.class);
 
 	private DatabaseClient client;
+	private ContentSource contentSource;
 	private List<? extends DocumentWriteOperation> items;
 
 	public BatchWriter(DatabaseClient client, List<? extends DocumentWriteOperation> items) {
@@ -124,20 +150,55 @@ class BatchWriter implements Runnable {
 		this.items = items;
 	}
 
+	public BatchWriter(ContentSource contentSource, List<? extends DocumentWriteOperation> items) {
+		this.contentSource = contentSource;
+		this.items = items;
+	}
+
 	@Override
 	public void run() {
-		GenericDocumentManager mgr = client.newDocumentManager();
-		DocumentWriteSet set = mgr.newWriteSet();
-		for (DocumentWriteOperation item : items) {
-			set.add(item);
+		if (client != null) {
+			GenericDocumentManager mgr = client.newDocumentManager();
+			DocumentWriteSet set = mgr.newWriteSet();
+			for (DocumentWriteOperation item : items) {
+				set.add(item);
+			}
+			int count = set.size();
+			if (logger.isDebugEnabled()) {
+				logger.debug("Writing " + count + " documents to MarkLogic");
+			}
+			mgr.write(set);
+			if (logger.isInfoEnabled()) {
+				logger.info("Wrote " + count + " documents to MarkLogic");
+			}
 		}
-		int count = set.size();
-		if (logger.isDebugEnabled()) {
-			logger.debug("Writing " + count + " documents to MarkLogic");
-		}
-		mgr.write(set);
-		if (logger.isInfoEnabled()) {
-			logger.info("Wrote " + count + " documents to MarkLogic");
+		else {
+			Session session = contentSource.newSession();
+			try {
+				int count = items.size();
+				Content[] array = new Content[count];
+				for (int i = 0; i < count; i++) {
+					DocumentWriteOperation op = items.get(i);
+					// Cheating - we know what kind of handle it is here; really need an adapter
+					StringHandle h = (StringHandle)op.getContent();
+					ContentCreateOptions options = new ContentCreateOptions();
+					// Cheating again
+					DocumentMetadataHandle metadata = (DocumentMetadataHandle)op.getMetadata();
+					options.setCollections(metadata.getCollections().toArray(new String[]{}));
+					array[i] = ContentFactory.newContent(op.getUri(), h.get(), options);
+					if (logger.isDebugEnabled()) {
+						logger.debug("Writing " + count + " documents to MarkLogic");
+					}
+					session.insertContent(array);
+					if (logger.isInfoEnabled()) {
+						logger.info("Wrote " + count + " documents to MarkLogic");
+					}
+				}
+			} catch (RequestException e) {
+				throw new RuntimeException("Unable to insert content: " + e.getMessage(), e);
+			} finally {
+				session.close();
+			}
 		}
 	}
 }

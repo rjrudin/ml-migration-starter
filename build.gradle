@@ -48,7 +48,8 @@ task migrate(type: JavaExec) {
 		"--sql", sql,
 		"--rootLocalName", rootLocalName,
 		"--collections", collections,
-		"--permissions", permissions
+		"--permissions", permissions,
+		"--xcc", "true"
 	]
 }
 
