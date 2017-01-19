@@ -3,9 +3,9 @@ package org.example;
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.document.DocumentWriteOperation;
-import com.marklogic.client.helper.DatabaseClientConfig;
 import com.marklogic.client.helper.LoggingObject;
 import com.marklogic.spring.batch.Options;
+import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
 import com.marklogic.spring.batch.item.processor.ColumnMapProcessor;
@@ -26,7 +26,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -89,7 +88,8 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		reader.setRowMapper(new ColumnMapRowMapper());
 
 		// Processor
-		ColumnMapProcessor processor = new ColumnMapProcessor(new DefaultStaxColumnMapSerializer());
+		ColumnMapSerializer serializer = new DefaultStaxColumnMapSerializer();
+		ColumnMapProcessor processor = new ColumnMapProcessor(serializer);
 		if (rootLocalName != null) {
 			processor.setRootLocalName(rootLocalName);
 		}
@@ -113,6 +113,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		}
 
 		// Run the job
+		logger.info("Initialized components, launching job");
 		return stepBuilderFactory.get("step1")
 			.<Map<String, Object>, DocumentWriteOperation>chunk(chunkSize)
 			.reader(reader)

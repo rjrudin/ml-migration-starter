@@ -186,13 +186,13 @@ class BatchWriter implements Runnable {
 					DocumentMetadataHandle metadata = (DocumentMetadataHandle)op.getMetadata();
 					options.setCollections(metadata.getCollections().toArray(new String[]{}));
 					array[i] = ContentFactory.newContent(op.getUri(), h.get(), options);
-					if (logger.isDebugEnabled()) {
-						logger.debug("Writing " + count + " documents to MarkLogic");
-					}
-					session.insertContent(array);
-					if (logger.isInfoEnabled()) {
-						logger.info("Wrote " + count + " documents to MarkLogic");
-					}
+				}
+				if (logger.isDebugEnabled()) {
+					logger.debug("Writing " + count + " documents to MarkLogic");
+				}
+				session.insertContent(array);
+				if (logger.isInfoEnabled()) {
+					logger.info("Wrote " + count + " documents to MarkLogic");
 				}
 			} catch (RequestException e) {
 				throw new RuntimeException("Unable to insert content: " + e.getMessage(), e);
