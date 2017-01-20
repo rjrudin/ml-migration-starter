@@ -9,7 +9,7 @@ import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
 import com.marklogic.spring.batch.item.processor.ColumnMapProcessor;
-import com.marklogic.spring.batch.item.writer.ParallelizedMarkLogicItemWriter;
+import com.marklogic.spring.batch.item.writer.BatchItemWriter;
 import com.marklogic.xcc.ContentSource;
 import com.marklogic.xcc.ContentSourceFactory;
 import joptsimple.OptionParser;
@@ -101,12 +101,12 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		}
 
 		// Writer
-		ParallelizedMarkLogicItemWriter writer;
+		BatchItemWriter writer;
 		if ("true".equals(xcc)) {
-			writer = new ParallelizedMarkLogicItemWriter();
+			writer = new BatchItemWriter();
 			writer.setContentSources(buildContentSources(hosts));
 		} else {
-			writer = new ParallelizedMarkLogicItemWriter(buildDatabaseClients(hosts));
+			writer = new BatchItemWriter(buildDatabaseClients(hosts));
 		}
 		if (threadCount != null && threadCount > 0) {
 			writer.setThreadCount(threadCount);
