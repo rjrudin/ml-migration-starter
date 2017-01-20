@@ -59,11 +59,6 @@ public class XccBatchWriter extends BatchWriterSupport {
 		});
 	}
 
-	@Override
-	public void waitForCompletion() {
-
-	}
-
 	public void setDocumentWriteOperationAdapter(DocumentWriteOperationAdapter documentWriteOperationAdapter) {
 		this.documentWriteOperationAdapter = documentWriteOperationAdapter;
 	}
