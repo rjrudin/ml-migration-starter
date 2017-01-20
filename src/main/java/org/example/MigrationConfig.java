@@ -2,6 +2,10 @@ package org.example;
 
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
+import com.marklogic.client.batch.BatchWriter;
+import com.marklogic.client.batch.BatchWriterSupport;
+import com.marklogic.client.batch.RestBatchWriter;
+import com.marklogic.client.batch.XccBatchWriter;
 import com.marklogic.client.document.DocumentWriteOperation;
 import com.marklogic.client.helper.LoggingObject;
 import com.marklogic.spring.batch.Options;
@@ -101,16 +105,16 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		}
 
 		// Writer
-		BatchItemWriter writer;
+		BatchWriter batchWriter;
 		if ("true".equals(xcc)) {
-			writer = new BatchItemWriter();
-			writer.setContentSources(buildContentSources(hosts));
+			batchWriter = new XccBatchWriter(buildContentSources(hosts));
 		} else {
-			writer = new BatchItemWriter(buildDatabaseClients(hosts));
+			batchWriter = new RestBatchWriter(buildDatabaseClients(hosts));
 		}
 		if (threadCount != null && threadCount > 0) {
-			writer.setThreadCount(threadCount);
+			((BatchWriterSupport) batchWriter).setThreadCount(threadCount);
 		}
+		BatchItemWriter writer = new BatchItemWriter(batchWriter);
 
 		// Run the job
 		logger.info("Initialized components, launching job");

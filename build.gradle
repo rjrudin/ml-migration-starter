@@ -49,7 +49,7 @@ task migrate(type: JavaExec) {
 		"--rootLocalName", rootLocalName,
 		"--collections", collections,
 		"--permissions", permissions,
-		"--xcc", "true"
+		"--xcc", xcc
 	]
 }
 
