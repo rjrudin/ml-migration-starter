@@ -1,6 +1,7 @@
 package com.marklogic.spring.batch.item.processor;
 
 import com.marklogic.client.document.DocumentWriteOperation;
+import com.marklogic.client.impl.DocumentWriteOperationImpl;
 import com.marklogic.client.io.DocumentMetadataHandle;
 import com.marklogic.client.io.MarkLogicWriteHandle;
 import com.marklogic.client.io.StringHandle;
@@ -10,6 +11,11 @@ import org.springframework.batch.item.ItemProcessor;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * This is a very basic processor for taking a column map (a Map<String, Object>) and serializing it via a
+ * ColumnMapSerializer, and then providing very basic support for setting permissions and collections.
+ * marklogic-spring-batch provides other options for e.g. customizing the URI.
+ */
 public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, DocumentWriteOperation> {
 
 	private ColumnMapSerializer columnMapSerializer;
@@ -25,10 +31,9 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 	}
 
 	@Override
-	public MarkLogicWriteHandle process(Map<String, Object> item) throws Exception {
+	public DocumentWriteOperation process(Map<String, Object> item) throws Exception {
 		String content = columnMapSerializer.serializeColumnMap(item, rootLocalName);
 
-		// TODO Use UriGenerator
 		String uuid = UUID.randomUUID().toString();
 		String uri = "/" + rootLocalName + "/" + uuid + ".xml";
 
@@ -45,7 +50,8 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 			}
 		}
 
-		return new MarkLogicWriteHandle(uri, metadata, new StringHandle(content));
+		return new DocumentWriteOperationImpl(DocumentWriteOperation.OperationType.DOCUMENT_WRITE,
+			uri, metadata, new StringHandle(content));
 	}
 
 	public void setRootLocalName(String rootLocalName) {
