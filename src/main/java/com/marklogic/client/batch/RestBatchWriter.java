@@ -25,7 +25,7 @@ public class RestBatchWriter extends BatchWriterSupport {
 		final DatabaseClient client = databaseClients.get(clientIndex);
 		clientIndex++;
 
-		execute(new Runnable() {
+		getTaskExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				GenericDocumentManager mgr = client.newDocumentManager();

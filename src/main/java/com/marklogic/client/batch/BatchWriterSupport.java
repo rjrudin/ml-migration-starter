@@ -1,7 +1,6 @@
 package com.marklogic.client.batch;
 
 import com.marklogic.client.helper.LoggingObject;
-import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ExecutorConfigurationSupport;
@@ -52,12 +51,8 @@ public abstract class BatchWriterSupport extends LoggingObject implements BatchW
 		}
 	}
 
-	protected void execute(Runnable runnable) {
-		if (taskExecutor instanceof AsyncTaskExecutor && false) {
-			((AsyncTaskExecutor) taskExecutor).submit(runnable);
-		} else {
-			taskExecutor.execute(runnable);
-		}
+	protected TaskExecutor getTaskExecutor() {
+		return taskExecutor;
 	}
 
 	public void setTaskExecutor(TaskExecutor taskExecutor) {
