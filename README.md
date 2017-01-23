@@ -11,9 +11,13 @@ This project has the following defaults in place that you can use as a starting 
 1. Uses StAX to turn that Map<String, Object> into a simple XML document
 1. Uses the ML Java API to write to MarkLogic
 1. Defaults to writing to localhost/8000/admin/admin
-1. Supports writing to any number of hosts in a cluster (once ML9 is out, we can use [DMSDK](https://github.com/marklogic/data-movement) for this instead)
-1. Supports a configurable thread pool for how many threads you want writing to MarkLogic (another feature DMSDK will provide with ML9)
+1. Supports writing to any number of hosts in a cluster
+1. Supports a configurable thread pool for how many threads you want writing to MarkLogic
 1. Has a Gradle task for launching the migration - "./gradlew migrate"
+
+The support for writing to any number of hosts and parallelizing writes via a thread pool is provided by the 
+[BatchWriter library in ml-javaclient-util](https://github.com/rjrudin/ml-javaclient-util/tree/dev/src/main/java/com/marklogic/client/batch). 
+Once MarkLogic 9 is available, these features will instead be provided via [DMSDK](https://github.com/marklogic/data-movement).
 
 To try this out locally, just do the following:
 
@@ -25,26 +29,38 @@ To try this out locally, just do the following:
 
 You should see some nice logging like this:
 
-    18:20:10.057 [main] INFO  org.example.MigrationConfig - Chunk size: 100
-    18:20:10.057 [main] INFO  org.example.MigrationConfig - Hosts: localhost
-    18:20:10.057 [main] INFO  org.example.MigrationConfig - SQL: SELECT * FROM film
-    18:20:10.057 [main] INFO  org.example.MigrationConfig - Root local name: Film
-    18:20:10.057 [main] INFO  org.example.MigrationConfig - Collections: film
-    18:20:10.057 [main] INFO  org.example.MigrationConfig - Thread count: 16
-    18:20:10.073 [main] INFO  org.example.MigrationConfig - Creating client for host: localhost
-    18:20:10.525 [main] INFO  c.m.s.b.i.w.ParallelizedMarkLogicItemWriter - Initializing thread pool with a count of 16
-    18:20:14.394 [ThreadPoolTaskExecutor-3] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [ThreadPoolTaskExecutor-2] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [ThreadPoolTaskExecutor-5] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [ThreadPoolTaskExecutor-7] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [ThreadPoolTaskExecutor-4] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [ThreadPoolTaskExecutor-1] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [ThreadPoolTaskExecutor-6] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [ThreadPoolTaskExecutor-9] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [ThreadPoolTaskExecutor-8] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [ThreadPoolTaskExecutor-10] INFO  c.m.s.batch.item.writer.BatchWriter - Wrote 100 documents to MarkLogic
-    18:20:14.394 [main] INFO  c.m.s.b.i.w.ParallelizedMarkLogicItemWriter - Releasing DatabaseClient instances...
-    18:20:14.394 [main] INFO  c.m.s.b.i.w.ParallelizedMarkLogicItemWriter - Finished writing data to MarkLogic!
+    14:33:43.053 [main] INFO  org.example.MigrationConfig - Chunk size: 100
+    14:33:43.055 [main] INFO  org.example.MigrationConfig - Hosts: localhost
+    14:33:43.055 [main] INFO  org.example.MigrationConfig - SQL: SELECT * FROM film
+    14:33:43.055 [main] INFO  org.example.MigrationConfig - Root local name: Film
+    14:33:43.056 [main] INFO  org.example.MigrationConfig - Collections: film,migrated
+    14:33:43.056 [main] INFO  org.example.MigrationConfig - Permissions: rest-reader,read,rest-writer,update
+    14:33:43.056 [main] INFO  org.example.MigrationConfig - Thread count: 16
+    14:33:43.068 [main] INFO  org.example.MigrationConfig - Client username: admin
+    14:33:43.068 [main] INFO  org.example.MigrationConfig - Client database: Documents
+    14:33:43.068 [main] INFO  org.example.MigrationConfig - Client authentication: DIGEST
+    14:33:43.068 [main] INFO  org.example.MigrationConfig - Creating client for host: localhost
+    14:33:43.287 [main] INFO  org.example.MigrationConfig - Initialized components, launching job
+    14:33:43.580 [main] INFO  c.m.s.b.item.writer.BatchItemWriter - On stream open, initializing BatchWriter
+    14:33:43.581 [main] INFO  c.m.client.batch.RestBatchWriter - Initializing thread pool with a count of 16
+    14:33:43.584 [main] INFO  c.m.s.b.item.writer.BatchItemWriter - On stream open, finished initializing BatchWriter
+    14:33:44.099 [main] INFO  c.m.s.b.item.writer.BatchItemWriter - On stream close, waiting for BatchWriter to complete
+    14:33:44.099 [main] INFO  c.m.client.batch.RestBatchWriter - Calling shutdown on thread pool
+    14:33:44.961 [ThreadPoolTaskExecutor-10] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.962 [ThreadPoolTaskExecutor-4] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.965 [ThreadPoolTaskExecutor-9] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.968 [ThreadPoolTaskExecutor-6] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.973 [ThreadPoolTaskExecutor-5] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.979 [ThreadPoolTaskExecutor-3] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.979 [ThreadPoolTaskExecutor-1] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.980 [ThreadPoolTaskExecutor-8] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.980 [ThreadPoolTaskExecutor-7] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.985 [ThreadPoolTaskExecutor-2] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    14:33:44.985 [main] INFO  c.m.client.batch.RestBatchWriter - Thread pool finished shutdown
+    14:33:44.985 [main] INFO  c.m.client.batch.RestBatchWriter - Releasing DatabaseClient instances...
+    14:33:44.985 [main] INFO  c.m.client.batch.RestBatchWriter - Finished releasing DatabaseClient instances
+    14:33:44.985 [main] INFO  c.m.s.b.item.writer.BatchItemWriter - On stream close, finished waiting for BatchWriter to complete
+
 
 The default configuration is all in gradle.properties. You can modify those on the command line, e.g.
 
