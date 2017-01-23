@@ -14,7 +14,8 @@ configurations {
 
 dependencies {
 	compile "com.marklogic:marklogic-spring-batch-core:0.7.4"
-	compile "org.springframework:spring-jdbc:4.3.1.RELEASE"
+	compile 'org.springframework:spring-context:4.3.5.RELEASE'
+	compile "org.springframework:spring-jdbc:4.3.5.RELEASE"
 
 	// Example of pulling MySQL's JDBC driver from a public Maven repo
 	runtime "mysql:mysql-connector-java:5.1.6"

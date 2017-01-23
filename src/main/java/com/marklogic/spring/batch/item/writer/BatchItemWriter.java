@@ -30,12 +30,24 @@ public class BatchItemWriter extends LoggingObject implements ItemWriter<Documen
 
 	@Override
 	public void open(ExecutionContext executionContext) throws ItemStreamException {
+		if (logger.isInfoEnabled()) {
+			logger.info("On stream open, initializing BatchWriter");
+		}
 		batchWriter.initialize();
+		if (logger.isInfoEnabled()) {
+			logger.info("On stream open, finished initializing BatchWriter");
+		}
 	}
 
 	@Override
 	public void close() throws ItemStreamException {
+		if (logger.isInfoEnabled()) {
+			logger.info("On stream close, waiting for BatchWriter to complete");
+		}
 		batchWriter.waitForCompletion();
+		if (logger.isInfoEnabled()) {
+			logger.info("On stream close, finished waiting for BatchWriter to complete");
+		}
 	}
 
 	@Override

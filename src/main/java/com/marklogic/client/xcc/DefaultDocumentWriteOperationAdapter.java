@@ -40,7 +40,7 @@ public class DefaultDocumentWriteOperationAdapter implements DocumentWriteOperat
 	}
 
 	/**
-	 * TODO Only adapts collections, quality, and permissions so far. Should add Format support too.
+	 * TODO Only adapts collections, quality, format, and permissions so far.
 	 *
 	 * @param handle
 	 * @return
@@ -50,35 +50,59 @@ public class DefaultDocumentWriteOperationAdapter implements DocumentWriteOperat
 		if (handle instanceof DocumentMetadataHandle) {
 			DocumentMetadataHandle metadata = (DocumentMetadataHandle) handle;
 			options.setQuality(metadata.getQuality());
-
 			options.setCollections(metadata.getCollections().toArray(new String[]{}));
-
-			Set<ContentPermission> contentPermissions = new HashSet<>();
-			DocumentMetadataHandle.DocumentPermissions permissions = metadata.getPermissions();
-			for (String role : permissions.keySet()) {
-				for (DocumentMetadataHandle.Capability capability : permissions.get(role)) {
-					ContentCapability contentCapability;
-					if (DocumentMetadataHandle.Capability.EXECUTE.equals(capability)) {
-						contentCapability = ContentCapability.EXECUTE;
-					}
-					else if (DocumentMetadataHandle.Capability.INSERT.equals(capability)) {
-						contentCapability = ContentCapability.INSERT;
-					}
-					else if (DocumentMetadataHandle.Capability.READ.equals(capability)) {
-						contentCapability = ContentCapability.READ;
-					}
-					else if (DocumentMetadataHandle.Capability.UPDATE.equals(capability)) {
-						contentCapability = ContentCapability.UPDATE;
-					}
-					else throw new IllegalArgumentException("Unrecognized permission capability: " + capability);
-					contentPermissions.add(new ContentPermission(contentCapability, role));
-				}
-			}
-			options.setPermissions(contentPermissions.toArray(new ContentPermission[]{}));
-
+			adaptPermissions(options, metadata);
+			adaptFormat(options, metadata);
 		} else {
 			logger.warn("Only supports DocumentMetadataHandle; unsupported metadata class: " + handle.getClass().getName());
 		}
 		return options;
+	}
+
+	protected void adaptFormat(ContentCreateOptions options, DocumentMetadataHandle metadata) {
+		Format format = metadata.getFormat();
+		DocumentFormat xccFormat = null;
+		if (format != null) {
+			if (Format.BINARY.equals(format)) {
+				xccFormat = DocumentFormat.BINARY;
+			} else if (Format.JSON.equals(format)) {
+				xccFormat = DocumentFormat.JSON;
+			} else if (Format.TEXT.equals(format)) {
+				xccFormat = DocumentFormat.TEXT;
+			} else if (Format.XML.equals(format)) {
+				xccFormat = DocumentFormat.XML;
+			} else if (Format.UNKNOWN.equals(format)) {
+				xccFormat = DocumentFormat.NONE;
+			} else if (logger.isDebugEnabled()) {
+				logger.debug("Unsupported format, can't adapt to an XCC DocumentFormat; " + format.toString());
+			}
+		}
+		if (xccFormat != null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Adapted REST format " + format + " to XCC format: " + xccFormat.toString());
+			}
+			options.setFormat(xccFormat);
+		}
+	}
+
+	protected void adaptPermissions(ContentCreateOptions options, DocumentMetadataHandle metadata) {
+		Set<ContentPermission> contentPermissions = new HashSet<>();
+		DocumentMetadataHandle.DocumentPermissions permissions = metadata.getPermissions();
+		for (String role : permissions.keySet()) {
+			for (DocumentMetadataHandle.Capability capability : permissions.get(role)) {
+				ContentCapability contentCapability;
+				if (DocumentMetadataHandle.Capability.EXECUTE.equals(capability)) {
+					contentCapability = ContentCapability.EXECUTE;
+				} else if (DocumentMetadataHandle.Capability.INSERT.equals(capability)) {
+					contentCapability = ContentCapability.INSERT;
+				} else if (DocumentMetadataHandle.Capability.READ.equals(capability)) {
+					contentCapability = ContentCapability.READ;
+				} else if (DocumentMetadataHandle.Capability.UPDATE.equals(capability)) {
+					contentCapability = ContentCapability.UPDATE;
+				} else throw new IllegalArgumentException("Unrecognized permission capability: " + capability);
+				contentPermissions.add(new ContentPermission(contentCapability, role));
+			}
+		}
+		options.setPermissions(contentPermissions.toArray(new ContentPermission[]{}));
 	}
 }

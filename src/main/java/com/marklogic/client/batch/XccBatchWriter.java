@@ -8,6 +8,7 @@ import com.marklogic.xcc.ContentSource;
 import com.marklogic.xcc.Session;
 import com.marklogic.xcc.exceptions.RequestException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,7 +18,7 @@ import java.util.List;
 public class XccBatchWriter extends BatchWriterSupport {
 
 	private List<ContentSource> contentSources;
-	private int clientIndex = 0;
+	private int contentSourceIndex = 0;
 	private DocumentWriteOperationAdapter documentWriteOperationAdapter;
 
 	public XccBatchWriter(List<ContentSource> contentSources) {
@@ -27,25 +28,26 @@ public class XccBatchWriter extends BatchWriterSupport {
 
 	@Override
 	public void write(final List<? extends DocumentWriteOperation> items) {
-		if (clientIndex >= contentSources.size()) {
-			clientIndex = 0;
+		if (contentSourceIndex >= contentSources.size()) {
+			contentSourceIndex = 0;
 		}
-		final ContentSource contentSource = contentSources.get(clientIndex);
-		clientIndex++;
+
+		final ContentSource contentSource = contentSources.get(contentSourceIndex);
+		contentSourceIndex++;
 
 		execute(new Runnable() {
 			@Override
 			public void run() {
 				Session session = contentSource.newSession();
+				int count = items.size();
+				Content[] array = new Content[count];
+				for (int i = 0; i < count; i++) {
+					array[i] = documentWriteOperationAdapter.adapt(items.get(i));
+				}
+				if (logger.isDebugEnabled()) {
+					logger.debug("Writing " + count + " documents to MarkLogic");
+				}
 				try {
-					int count = items.size();
-					Content[] array = new Content[count];
-					for (int i = 0; i < count; i++) {
-						array[i] = documentWriteOperationAdapter.adapt(items.get(i));
-					}
-					if (logger.isDebugEnabled()) {
-						logger.debug("Writing " + count + " documents to MarkLogic");
-					}
 					session.insertContent(array);
 					if (logger.isInfoEnabled()) {
 						logger.info("Wrote " + count + " documents to MarkLogic");
