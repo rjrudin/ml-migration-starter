@@ -12,6 +12,8 @@ import java.util.List;
 
 /**
  * Depends on an instance of BatchWriter from ml-javaclient-util.
+ *
+ * TODO Migrate this to marklogic-spring-batch.
  */
 public class BatchItemWriter extends LoggingObject implements ItemWriter<DocumentWriteOperation>, ItemStream {
 

@@ -1,4 +1,4 @@
-package com.marklogic.spring.batch.item.processor;
+package org.example;
 
 import com.marklogic.client.document.DocumentWriteOperation;
 import com.marklogic.client.impl.DocumentWriteOperationImpl;
