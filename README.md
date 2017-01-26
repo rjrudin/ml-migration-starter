@@ -1,37 +1,40 @@
 # Making migrations from relational databases to MarkLogic easy
 
-This is a starter kit for creating your own project that uses [Spring Batch](http://projects.spring.io/spring-batch/) and
+This is a starter kit for creating an application that uses [Spring Batch](http://projects.spring.io/spring-batch/) and
 [marklogic-spring-batch](https://github.com/sastafford/marklogic-spring-batch) for migrating data from any RDBMS into MarkLogic. You 
-can clone/fork/do whatever you want with this repository to get your own project going.
+can clone/fork/do whatever you want with this repository to get your own application going.
+
+This project provides the following features:
+
+1. Provides a simple way to get started with Spring Batch - just configure the JDBC/MarkLogic connection properties, provide your
+database's JDBC driver, write a SQL query, and you're off and running
+1. Given a SQL query, uses a Spring JDBC [ColumnMapRowMapper](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/jdbc/core/ColumnMapRowMapper.html) 
+to read every row as a map
+1. Uses [StAX](https://docs.oracle.com/javase/tutorial/jaxp/stax/api.html) to convert that map into an XML document
+1. Uses [BatchWriter in ml-javaclient-util](https://github.com/rjrudin/ml-javaclient-util#parallelized-batch-writes) to write batches
+of documents across many hosts in a cluster and via a configurable [Spring thread pool](https://docs.spring.io/spring/docs/current/spring-framework-reference/html/scheduling.html)
 
 This project has the following defaults in place that you can use as a starting point:
 
-1. Talks to a local MySQL database with the [Sakila](https://dev.mysql.com/doc/sakila/en/) database loaded in it, using the MySQL JDBC driver (easily customized to use any database with any JDBC driver)
-1. Uses Spring's ColumnMapReader to turn every row into a Map<String, Object>
-1. Uses StAX to turn that Map<String, Object> into a simple XML document
-1. Uses the ML Java API to write to MarkLogic
-1. Defaults to writing to localhost/8000/admin/admin
-1. Supports writing to any number of hosts in a cluster
-1. Supports a configurable thread pool for how many threads you want writing to MarkLogic
+1. Talks to a local MySQL database with the [Sakila](https://dev.mysql.com/doc/sakila/en/) database loaded in it, using 
+the MySQL JDBC driver (this is easily customized to use any database with any JDBC driver)
+1. Defaults to writing to MarkLogic using localhost/8000/admin/admin
 1. Has a Gradle task for launching the migration - "./gradlew migrate"
-
-The support for writing to any number of hosts and parallelizing writes via a thread pool is provided by the 
-[BatchWriter library in ml-javaclient-util](https://github.com/rjrudin/ml-javaclient-util/tree/dev/src/main/java/com/marklogic/client/batch). 
-Once MarkLogic 9 is available, these features will instead be provided via [DMSDK](https://github.com/marklogic/data-movement).
 
 ## How do I try this out?
 
-To try this out locally, just do the following:
+To try this out locally with the default configuration for MySQL, just do the following:
 
 1. Clone this repo
 1. Install and start MySQL
 1. [Load the Sakila dataset](https://dev.mysql.com/doc/sakila/en/sakila-installation.html)
-1. Verify you have ML 8+ installed locally and that port 8000 (the default one) points to the Documents database (you can of course modify this to write to any database you want)
+1. Verify you have ML 8+ installed locally and that port 8000 (the default one) points to the Documents database 
+(you can of course modify this to write to any database you want)
 1. Verify that the username/password properties in gradle.properties are correct for your MarkLogic cluster (it's best 
 not to use the admin user unless absolutely necessary, but this defaults to it for the sake of convenience)
 1. Run ./gradlew migrate
 
-You should see some nice logging like this:
+You should see some logging like this:
 
     14:33:43.053 [main] INFO  org.example.MigrationConfig - Chunk size: 100
     14:33:43.055 [main] INFO  org.example.MigrationConfig - Hosts: localhost
@@ -78,7 +81,7 @@ You can also see all the supported arguments:
 
 Comments,questions - please file an issue.
 
-## How do I modify how this works?
+## How do I make this work with my own database?
 
 To try this on your own database, you'll need to change the JDBC connection properties in gradle.properties - jdbcUrl,
 jdbcUsername, and jdbcPassword. 
