@@ -13,6 +13,8 @@ to read every row as a map
 1. Uses [StAX](https://docs.oracle.com/javase/tutorial/jaxp/stax/api.html) to convert that map into an XML document
 1. Uses [BatchWriter in ml-javaclient-util](https://github.com/rjrudin/ml-javaclient-util#parallelized-batch-writes) to write batches
 of documents across many hosts in a cluster and via a configurable [Spring thread pool](https://docs.spring.io/spring/docs/current/spring-framework-reference/html/scheduling.html)
+1. Use either the [MarkLogic Java Client](https://docs.marklogic.com/guide/java) or [XCC](https://docs.marklogic.com/guide/xcc/intro) to load data
+(the new Data Movement SDK will be supported once MarkLogic 9 is available)
 
 This project has the following defaults in place that you can use as a starting point:
 
@@ -69,11 +71,15 @@ You should see some logging like this:
     14:33:44.985 [main] INFO  c.m.s.b.item.writer.BatchItemWriter - On stream close, finished waiting for BatchWriter to complete
 
 
-The default configuration is all in gradle.properties. You can modify those on the command line, e.g.
+The default configuration is all in gradle.properties. You can modify those properties on the command line, e.g.
 
     ./gradlew migrate -Phosts=host1,host2,host3 -PthreadCount=32
-    
-Or just modify the file and start building your own migration. 
+
+Or load the data via XCC instead of the REST API:
+
+    ./gradlew migrate -Pxcc=true
+
+Or just modify the file and start building your own application. 
 
 You can also see all the supported arguments:
 
