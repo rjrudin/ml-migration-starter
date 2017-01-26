@@ -1,4 +1,4 @@
-package com.marklogic.spring.batch.item.processor;
+package org.example;
 
 import com.marklogic.client.document.DocumentWriteOperation;
 import com.marklogic.client.impl.DocumentWriteOperationImpl;
@@ -14,7 +14,7 @@ import java.util.UUID;
 /**
  * This is a very basic processor for taking a column map (a Map<String, Object>) and serializing it via a
  * ColumnMapSerializer, and then providing very basic support for setting permissions and collections.
- * marklogic-spring-batch provides other options for e.g. customizing the URI.
+ * marklogic-spring-batch provides other options for e.g. customizing the URI. Feel free to customize any way you'd like.
  */
 public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, DocumentWriteOperation> {
 
