@@ -1,8 +1,10 @@
 # Making migrations from relational databases to MarkLogic easy
 
 This is a starter kit for creating an application that uses [Spring Batch](http://projects.spring.io/spring-batch/) and
-[marklogic-spring-batch](https://github.com/sastafford/marklogic-spring-batch) for migrating data from any RDBMS into MarkLogic. You 
-can clone/fork/do whatever you want with this repository to get your own application going.
+[marklogic-spring-batch](https://github.com/sastafford/marklogic-spring-batch) for migrating data from any RDBMS into 
+MarkLogic. The intent is to simplify the process of creating a migration application using Spring Batch by 
+leveraging the reusable components in marklogic-spring-batch, and by organizing a Gradle-based project for you that you
+can clone/fork/etc to quickly extend and customize for your specific needs. 
 
 This project provides the following features:
 
@@ -22,6 +24,9 @@ This project has the following defaults in place that you can use as a starting 
 the MySQL JDBC driver (this is easily customized to use any database with any JDBC driver)
 1. Defaults to writing to MarkLogic using localhost/8000/admin/admin
 1. Has a Gradle task for launching the migration - "./gradlew migrate"
+
+The fact that this talks to MySQL by default is only so you can kick the tires on it as quickly as possible. It is of
+course expected that if you're not using MySQL, you'll remove the MySQL JDBC driver and add your own. 
 
 ## How do I try this out?
 
