@@ -39,6 +39,7 @@ public class AllTablesReader extends AbstractItemStreamItemReader<Map<String, Ob
 	private Map<String, JdbcCursorItemReader> tableReaders;
 	private int tableNameIndex = 0;
 	private String tableNameKey = DEFAULT_TABLE_NAME_KEY;
+	private String databaseVendor = "";
 
 	// For ignoring certain table names
 	private Set<String> excludeTableNames;
@@ -47,6 +48,11 @@ public class AllTablesReader extends AbstractItemStreamItemReader<Map<String, Ob
 	private Map<String, String> tableQueries;
 
 	public AllTablesReader(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
+
+	public AllTablesReader(DataSource dataSource, String databaseVendor) {
+		this.databaseVendor = databaseVendor;
 		this.dataSource = dataSource;
 	}
 
@@ -114,7 +120,7 @@ public class AllTablesReader extends AbstractItemStreamItemReader<Map<String, Ob
 		return new JdbcTemplate(dataSource).execute(new ConnectionCallback<List<String>>() {
 			@Override
 			public List<String> doInConnection(Connection con) throws SQLException, DataAccessException {
-				ResultSet rs = con.getMetaData().getTables(null, null, "%", null);
+				ResultSet rs = con.getMetaData().getTables(null, null, "%", new String[]{"TABLE"});
 				List<String> list = new ArrayList<>();
 				while (rs.next()) {
 					String name = rs.getString("TABLE_NAME");
@@ -153,6 +159,9 @@ public class AllTablesReader extends AbstractItemStreamItemReader<Map<String, Ob
 		if (tableQueries != null) {
 			sql = tableQueries.get(tableName);
 		}
+		if (tableName.contains(" ") && "MICROSOFT".equals(databaseVendor.toUpperCase())) {
+			tableName = "[" + tableName + "]";
+		}
 		return sql != null ? sql : "SELECT * FROM " + tableName;
 	}
 
@@ -166,5 +175,9 @@ public class AllTablesReader extends AbstractItemStreamItemReader<Map<String, Ob
 
 	public void setTableNameKey(String tableNameKey) {
 		this.tableNameKey = tableNameKey;
+	}
+
+	public void setDatabaseVendor(String databaseVendor) {
+		this.databaseVendor = databaseVendor;
 	}
 }

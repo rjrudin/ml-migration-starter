@@ -93,7 +93,8 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	                 @Value("#{jobParameters['hosts']}") String hosts,
 	                 @Value("#{jobParameters['threadCount']}") Integer threadCount,
 	                 @Value("#{jobParameters['sql']}") String sql,
-	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
+	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName,
+					 @Value("#{jobParameters['databaseVendor']}") String databaseVendor) {
 
 		logger.info("ALL TABLES: " + allTables);
 
@@ -111,11 +112,16 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		logger.info("Collections: " + collections);
 		logger.info("Permissions: " + permissions);
 		logger.info("Thread count: " + threadCount);
+		logger.info("Database Vendor: " + databaseVendor);
 
 		ItemReader<Map<String, Object>> reader = null;
 		if ("true".equals(allTables)) {
 			// Use AllTablesReader to process rows from every table
-			reader = new AllTablesReader(buildDataSource());
+			if (databaseVendor != null) {
+				reader = new AllTablesReader(buildDataSource(), databaseVendor);
+			} else {
+				reader = new AllTablesReader(buildDataSource());
+			}
 		} else {
 			// Uses Spring Batch's JdbcCursorItemReader and Spring JDBC's ColumnMapRowMapper to map each row
 			// to a Map<String, Object>. Normally, if you want more control, standard practice is to bind column values to
@@ -129,7 +135,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		}
 
 		// Processor - this is a very basic implementation for converting a column map to an XML string
-		ColumnMapSerializer serializer = new DefaultStaxColumnMapSerializer();
+		ColumnMapSerializer serializer = new XmlStringColumnMapSerializer();
 		ColumnMapProcessor processor = new ColumnMapProcessor(serializer);
 		if (rootLocalName != null) {
 			processor.setRootLocalName(rootLocalName);

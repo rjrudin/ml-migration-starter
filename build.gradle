@@ -3,6 +3,9 @@ apply plugin: 'java'
 repositories {
 	jcenter()
 	maven { url "http://developer.marklogic.com/maven2" }
+	flatDir {
+		dirs 'lib'
+	}
 }
 
 configurations {
@@ -18,7 +21,12 @@ dependencies {
 	compile "org.springframework:spring-jdbc:4.3.5.RELEASE"
 
 	// Example of pulling MySQL's JDBC driver from a public Maven repo
-	runtime "mysql:mysql-connector-java:5.1.6"
+	//runtime "mysql:mysql-connector-java:5.1.6"
+	runtime name: "ucanaccess-4.0.1"
+	runtime name: "jackcess-2.1.6"
+	runtime name: "hsqldb"
+	runtime name: "commons-lang-2.6"
+	runtime name: "commons-logging-1.1.1"
 
 	// Can reference a local JDBC driver like this (Oracle, along with others, do not publish their JDBC driver to a public repo)
 	// runtime files("./path/to/ojdbc-6.jar")
@@ -33,6 +41,12 @@ task migrate(type: JavaExec) {
 	classpath = sourceSets.main.runtimeClasspath
 	main = "org.example.MigrationMain"
 	args = [
+		"--rootLocalName", rootLocalName,
+		"--allTables", allTables,
+		"--databaseVendor", "Microsoft",
+		"--sql", sql,
+		"--collections", collections,
+		"--permissions", permissions,
 		"--config", "org.example.MigrationConfig",
 		"--chunk", chunk,
 		"--hosts", hosts,
@@ -46,12 +60,7 @@ task migrate(type: JavaExec) {
 		"--jdbc_url", jdbcUrl,
 		"--jdbc_username", jdbcUsername,
 		"--jdbc_password", jdbcPassword,
-		"--sql", sql,
-		"--rootLocalName", rootLocalName,
-		"--collections", collections,
-		"--permissions", permissions,
-		"--xcc", xcc,
-		"--allTables", allTables
+		"--xcc", xcc
 	]
 }
 
