@@ -10,7 +10,7 @@ This project provides the following features:
 
 1. Provides a simple way to get started with Spring Batch - just configure the JDBC/MarkLogic connection properties, provide your
 database's JDBC driver, write a SQL query, and you're off and running
-1. Given a SQL query, uses a Spring JDBC [ColumnMapRowMapper](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/jdbc/core/ColumnMapRowMapper.html) 
+1. Given a SQL query, or for every table in the database, uses a Spring JDBC [ColumnMapRowMapper](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/jdbc/core/ColumnMapRowMapper.html) 
 to read every row as a map
 1. Uses [StAX](https://docs.oracle.com/javase/tutorial/jaxp/stax/api.html) to convert that map into an XML document
 1. Uses [BatchWriter in ml-javaclient-util](https://github.com/rjrudin/ml-javaclient-util#parallelized-batch-writes) to write batches
@@ -25,12 +25,13 @@ the MySQL JDBC driver (this is easily customized to use any database with any JD
 1. Defaults to writing to MarkLogic using localhost/8000/admin/admin
 1. Has a Gradle task for launching the migration - "./gradlew migrate"
 
-The fact that this talks to MySQL by default is only so you can kick the tires on it as quickly as possible. It is of
+The fact that this talks to MySQL by default is only so you can kick the tires on it. It is of
 course expected that if you're not using MySQL, you'll remove the MySQL JDBC driver and add your own. 
 
 ## How do I try this out?
 
-To try this out locally with the default configuration for MySQL, just do the following:
+To try this out locally with the default configuration for MySQL, just do the following (if you don't want to bother
+with the MySQL demonstration, scroll down to the section on trying this out with your own database):
 
 1. Clone this repo
 1. Install and start MySQL
@@ -115,9 +116,16 @@ do that by modifying the following properties in gradle.properties:
     rootLocalName=Film
     collections=film,migrated
     permissions=rest-reader,read,rest-writer,update
-    
+
 At this point, you're able to reconfigure the migration job to talk to any database, run any SQL query, and set any
 local name for the root element, any collection, and any permission. 
+
+Alternatively, you can set the "allTables" property to true in order to query every table in the database. In this case,
+it's best to set "collections" to something generic, as the table name will also be used as a collection name for each
+document:
+
+    allTables=true
+    collections=migrated
 
 ### But how do I modify the XML that's inserted into MarkLogic?
 

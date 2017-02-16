@@ -50,7 +50,8 @@ task migrate(type: JavaExec) {
 		"--rootLocalName", rootLocalName,
 		"--collections", collections,
 		"--permissions", permissions,
-		"--xcc", xcc
+		"--xcc", xcc,
+		"--allTables", allTables
 	]
 }
 

@@ -12,6 +12,7 @@ import com.marklogic.spring.batch.Options;
 import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
+import com.marklogic.spring.batch.item.reader.database.AllTablesReader;
 import com.marklogic.spring.batch.item.writer.MarkLogicItemWriter;
 import com.marklogic.xcc.ContentSource;
 import com.marklogic.xcc.ContentSourceFactory;
@@ -22,6 +23,7 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.EnvironmentAware;
@@ -52,6 +54,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	 */
 	@Override
 	public void configureOptionParser(OptionParser parser) {
+		parser.accepts("allTables", "Set this to 'true' to ignore the 'sql' argument and read rows from all tables").withRequiredArg();
 		parser.accepts("collections", "Comma-delimited sequence of collections to insert each document into").withRequiredArg();
 		parser.accepts("hosts", "Comma-delimited sequence of host names of MarkLogic nodes to write documents to").withRequiredArg();
 		parser.accepts("permissions", "Comma-delimited sequence of permissions to apply to each document; role,capability,role,capability,etc").withRequiredArg();
@@ -83,6 +86,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	@Bean
 	@JobScope
 	public Step step(StepBuilderFactory stepBuilderFactory,
+	                 @Value("#{jobParameters['allTables']}") String allTables,
 	                 @Value("#{jobParameters['xcc']}") String xcc,
 	                 @Value("#{jobParameters['collections']}") String collections,
 	                 @Value("#{jobParameters['permissions']}") String permissions,
@@ -90,6 +94,8 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	                 @Value("#{jobParameters['threadCount']}") Integer threadCount,
 	                 @Value("#{jobParameters['sql']}") String sql,
 	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
+
+		logger.info("ALL TABLES: " + allTables);
 
 		// Determine the Spring Batch chunk size
 		int chunkSize = 100;
@@ -106,14 +112,21 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		logger.info("Permissions: " + permissions);
 		logger.info("Thread count: " + threadCount);
 
-		// Reader - uses Spring Batch's JdbcCursorItemReader and Spring JDBC's ColumnMapRowMapper to map each row
-		// to a Map<String, Object>. Normally, if you want more control, standard practice is to bind column values to
-		// a POJO and perform any validation/transformation/etc you need to on that object.
-		JdbcCursorItemReader<Map<String, Object>> reader = new JdbcCursorItemReader<Map<String, Object>>();
-		reader.setRowMapper(new ColumnMapRowMapper());
-		reader.setDataSource(buildDataSource());
-		reader.setSql(sql);
-		reader.setRowMapper(new ColumnMapRowMapper());
+		ItemReader<Map<String, Object>> reader = null;
+		if ("true".equals(allTables)) {
+			// Use AllTablesReader to process rows from every table
+			reader = new AllTablesReader(buildDataSource());
+		} else {
+			// Uses Spring Batch's JdbcCursorItemReader and Spring JDBC's ColumnMapRowMapper to map each row
+			// to a Map<String, Object>. Normally, if you want more control, standard practice is to bind column values to
+			// a POJO and perform any validation/transformation/etc you need to on that object.
+			JdbcCursorItemReader<Map<String, Object>> r = new JdbcCursorItemReader<Map<String, Object>>();
+			r.setRowMapper(new ColumnMapRowMapper());
+			r.setDataSource(buildDataSource());
+			r.setSql(sql);
+			r.setRowMapper(new ColumnMapRowMapper());
+			reader = r;
+		}
 
 		// Processor - this is a very basic implementation for converting a column map to an XML string
 		ColumnMapSerializer serializer = new DefaultStaxColumnMapSerializer();
