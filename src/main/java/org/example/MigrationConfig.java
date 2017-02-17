@@ -10,7 +10,7 @@ import com.marklogic.client.document.DocumentWriteOperation;
 import com.marklogic.client.helper.LoggingObject;
 import com.marklogic.spring.batch.Options;
 import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
-import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
+import com.marklogic.spring.batch.columnmap.XmlStringColumnMapSerializer;
 import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
 import com.marklogic.spring.batch.item.reader.database.AllTablesReader;
 import com.marklogic.spring.batch.item.writer.MarkLogicItemWriter;
