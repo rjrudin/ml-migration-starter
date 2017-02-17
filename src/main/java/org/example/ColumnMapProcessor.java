@@ -43,7 +43,7 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 		String content = columnMapSerializer.serializeColumnMap(item, thisRootLocalName);
 
 		String uuid = UUID.randomUUID().toString();
-		String uri = "/" + thisRootLocalName + "/" + uuid + ".xml";
+		String uri = "/" + thisRootLocalName.replaceAll("[^A-Za-z0-9\\_\\-]", "") + "/" + uuid + ".xml";
 
 		DocumentMetadataHandle metadata = new DocumentMetadataHandle();
 		if (collections != null) {
