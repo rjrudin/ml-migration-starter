@@ -91,7 +91,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	                 @Value("#{jobParameters['collections']}") String collections,
 	                 @Value("#{jobParameters['permissions']}") String permissions,
 	                 @Value("#{jobParameters['hosts']}") String hosts,
-	                 @Value("#{jobParameters['threadCount']}") Integer threadCount,
+	                 @Value("#{jobParameters['threadCount'] ?: 4}") Integer threadCount,
 	                 @Value("#{jobParameters['sql']}") String sql,
 	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
 
