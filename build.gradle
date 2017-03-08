@@ -13,7 +13,7 @@ configurations {
 }
 
 dependencies {
-	compile "com.marklogic:marklogic-spring-batch-core:0.9.0"
+	compile "com.marklogic:marklogic-spring-batch-core:0.11.0"
 	compile "com.marklogic:ml-javaclient-util:2.12.0"
 	compile "org.springframework:spring-jdbc:4.3.5.RELEASE"
 
@@ -56,6 +56,29 @@ task migrate(type: JavaExec) {
 		"--permissions", permissions,
 		"--xcc", xcc,
 		"--allTables", allTables
+	]
+}
+
+task migrateSampleData(type: JavaExec, dependsOn: 'loadH2Data' ) {
+	classpath = sourceSets.main.runtimeClasspath
+	main = "org.example.MigrationMain"
+	args = [
+			"--config", "org.example.MigrationConfig",
+			"--chunk", 5,
+			"--hosts", hosts,
+			"--port", port,
+			"--username", username,
+			"--password", password,
+			"--database", database,
+			"--auth", auth,
+			"--threadCount", threadCount,
+			"--allTables", "true",
+			"--jdbc_driver", "org.h2.Driver",
+			"--jdbc_username", "sa",
+			"--jdbc_url", "jdbc:h2:file:./data/sample",
+			"--permissions", permissions,
+			"--xcc", xcc,
+
 	]
 }
 
