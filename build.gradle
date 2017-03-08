@@ -17,8 +17,12 @@ dependencies {
 	compile "com.marklogic:ml-javaclient-util:2.12.0"
 	compile "org.springframework:spring-jdbc:4.3.5.RELEASE"
 
+	testCompile "com.marklogic:ml-junit:2.6.0"
+	testCompile "com.h2database:h2:1.4.193"
+
 	// Example of pulling MySQL's JDBC driver from a public Maven repo
 	runtime "mysql:mysql-connector-java:5.1.6"
+	runtime "com.h2database:h2:1.4.193"
 
 	// Can reference a local JDBC driver like this (Oracle, along with others, do not publish their JDBC driver to a public repo)
 	// runtime files("./path/to/ojdbc-6.jar")
@@ -62,5 +66,25 @@ task help(type: JavaExec) {
 	args = [
 		"--config", "org.example.MigrationConfig",
 		"--help"
+	]
+}
+
+// This task is for running the examples
+task runH2DataManager(type: JavaExec) {
+	classpath = configurations.runtime
+	main = "org.h2.tools.Console"
+	args = [
+			"-url", "jdbc:h2:file:./data/sample",
+			"-user", "sa"
+	]
+}
+
+task loadH2Data(type: JavaExec) {
+	classpath = configurations.runtime
+	main = "org.h2.tools.RunScript"
+	args = [
+			"-url", "jdbc:h2:file:./data/sample",
+			"-user", "sa",
+			"-script", "./src/test/resources/db/sampledata.sql"
 	]
 }
