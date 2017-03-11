@@ -12,7 +12,7 @@ import com.marklogic.spring.batch.Options;
 import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
-import com.marklogic.spring.batch.item.reader.database.AllTablesReader;
+import com.marklogic.spring.batch.item.reader.AllTablesItemReader;
 import com.marklogic.spring.batch.item.writer.MarkLogicItemWriter;
 import com.marklogic.xcc.ContentSource;
 import com.marklogic.xcc.ContentSourceFactory;
@@ -91,7 +91,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	                 @Value("#{jobParameters['collections']}") String collections,
 	                 @Value("#{jobParameters['permissions']}") String permissions,
 	                 @Value("#{jobParameters['hosts']}") String hosts,
-	                 @Value("#{jobParameters['threadCount']}") Integer threadCount,
+	                 @Value("#{jobParameters['threadCount'] ?: 4}") Integer threadCount,
 	                 @Value("#{jobParameters['sql']}") String sql,
 	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
 
@@ -115,7 +115,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		ItemReader<Map<String, Object>> reader = null;
 		if ("true".equals(allTables)) {
 			// Use AllTablesReader to process rows from every table
-			reader = new AllTablesReader(buildDataSource());
+			reader = new AllTablesItemReader(buildDataSource());
 		} else {
 			// Uses Spring Batch's JdbcCursorItemReader and Spring JDBC's ColumnMapRowMapper to map each row
 			// to a Map<String, Object>. Normally, if you want more control, standard practice is to bind column values to
