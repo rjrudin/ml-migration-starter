@@ -20,64 +20,65 @@ of documents across many hosts in a cluster and via a configurable [Spring threa
 
 This project has the following defaults in place that you can use as a starting point:
 
-1. Talks to a local MySQL database with the [Sakila](https://dev.mysql.com/doc/sakila/en/) database loaded in it, using 
-the MySQL JDBC driver (this is easily customized to use any database with any JDBC driver)
+1. Sets up and reads data from an [H2](http://www.h2database.com/html/main.html) test database - this is only used for a quick demonstration and can be
+easily removed from the project.
 1. Defaults to writing to MarkLogic using localhost/8000/admin/admin
 1. Has a Gradle task for launching the migration - "./gradlew migrate"
 
-The fact that this talks to MySQL by default is only so you can kick the tires on it. It is of
-course expected that if you're not using MySQL, you'll remove the MySQL JDBC driver and add your own. 
+The fact that this uses H2 by default is only so you can kick the tires on it. Instructions are below for how to change
+the JDBC configuration properties to point to your own database. 
 
 ## How do I try this out?
 
-To try this out locally with the default configuration for MySQL, just do the following (if you don't want to bother
-with the MySQL demonstration, scroll down to the section on trying this out with your own database):
+To try this out locally with the default configuration for H2, just do the following:
 
 1. Clone this repo
-1. Install and start MySQL
-1. [Load the Sakila dataset](https://dev.mysql.com/doc/sakila/en/sakila-installation.html)
 1. Verify you have ML 8+ installed locally and that port 8000 (the default one) points to the Documents database 
 (you can of course modify this to write to any database you want)
 1. Verify that the username/password properties in gradle.properties are correct for your MarkLogic cluster (it's best 
 not to use the admin user unless absolutely necessary, but this defaults to it for the sake of convenience)
-1. Run ./gradlew migrate
+1. Run ./gradlew setupH2 migrate
 
 You should see some logging like this:
 
-    14:33:43.053 [main] INFO  org.example.MigrationConfig - Chunk size: 100
-    14:33:43.055 [main] INFO  org.example.MigrationConfig - Hosts: localhost
-    14:33:43.055 [main] INFO  org.example.MigrationConfig - SQL: SELECT * FROM film
-    14:33:43.055 [main] INFO  org.example.MigrationConfig - Root local name: Film
-    14:33:43.056 [main] INFO  org.example.MigrationConfig - Collections: film,migrated
-    14:33:43.056 [main] INFO  org.example.MigrationConfig - Permissions: rest-reader,read,rest-writer,update
-    14:33:43.056 [main] INFO  org.example.MigrationConfig - Thread count: 16
-    14:33:43.068 [main] INFO  org.example.MigrationConfig - Client username: admin
-    14:33:43.068 [main] INFO  org.example.MigrationConfig - Client database: Documents
-    14:33:43.068 [main] INFO  org.example.MigrationConfig - Client authentication: DIGEST
-    14:33:43.068 [main] INFO  org.example.MigrationConfig - Creating client for host: localhost
-    14:33:43.287 [main] INFO  org.example.MigrationConfig - Initialized components, launching job
-    14:33:43.580 [main] INFO  c.m.s.b.item.writer.BatchItemWriter - On stream open, initializing BatchWriter
-    14:33:43.581 [main] INFO  c.m.client.batch.RestBatchWriter - Initializing thread pool with a count of 16
-    14:33:43.584 [main] INFO  c.m.s.b.item.writer.BatchItemWriter - On stream open, finished initializing BatchWriter
-    14:33:44.099 [main] INFO  c.m.s.b.item.writer.BatchItemWriter - On stream close, waiting for BatchWriter to complete
-    14:33:44.099 [main] INFO  c.m.client.batch.RestBatchWriter - Calling shutdown on thread pool
-    14:33:44.961 [ThreadPoolTaskExecutor-10] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.962 [ThreadPoolTaskExecutor-4] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.965 [ThreadPoolTaskExecutor-9] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.968 [ThreadPoolTaskExecutor-6] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.973 [ThreadPoolTaskExecutor-5] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.979 [ThreadPoolTaskExecutor-3] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.979 [ThreadPoolTaskExecutor-1] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.980 [ThreadPoolTaskExecutor-8] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.980 [ThreadPoolTaskExecutor-7] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.985 [ThreadPoolTaskExecutor-2] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
-    14:33:44.985 [main] INFO  c.m.client.batch.RestBatchWriter - Thread pool finished shutdown
-    14:33:44.985 [main] INFO  c.m.client.batch.RestBatchWriter - Releasing DatabaseClient instances...
-    14:33:44.985 [main] INFO  c.m.client.batch.RestBatchWriter - Finished releasing DatabaseClient instances
-    14:33:44.985 [main] INFO  c.m.s.b.item.writer.BatchItemWriter - On stream close, finished waiting for BatchWriter to complete
+    22:57:03.628 [main] INFO  org.example.MigrationConfig - Chunk size: 100
+    22:57:03.630 [main] INFO  org.example.MigrationConfig - Hosts: localhost
+    22:57:03.631 [main] INFO  org.example.MigrationConfig - Migrate all tables: true
+    22:57:03.631 [main] INFO  org.example.MigrationConfig - Permissions: rest-reader,read,rest-writer,update
+    22:57:03.631 [main] INFO  org.example.MigrationConfig - Thread count: 16
+    22:57:03.640 [main] INFO  org.example.MigrationConfig - Client username: admin
+    22:57:03.640 [main] INFO  org.example.MigrationConfig - Client database: Documents
+    22:57:03.640 [main] INFO  org.example.MigrationConfig - Client authentication: DIGEST
+    22:57:03.640 [main] INFO  org.example.MigrationConfig - Creating client for host: localhost
+    22:57:03.840 [main] INFO  org.example.MigrationConfig - Initialized components, launching job
+    22:57:04.142 [main] INFO  c.m.s.b.i.writer.MarkLogicItemWriter - On stream open, initializing BatchWriter
+    22:57:04.143 [main] INFO  c.m.client.batch.RestBatchWriter - Initializing thread pool with a count of 16
+    22:57:04.148 [main] INFO  c.m.s.b.i.writer.MarkLogicItemWriter - On stream open, finished initializing BatchWriter
+    22:57:04.205 [main] INFO  c.m.s.b.i.reader.AllTablesItemReader - Finished reading rows for query: SELECT * FROM CUSTOMER
+    22:57:04.400 [main] INFO  c.m.s.b.i.reader.AllTablesItemReader - Finished reading rows for query: SELECT * FROM INVOICE
+    22:57:04.469 [main] INFO  c.m.s.b.i.reader.AllTablesItemReader - Finished reading rows for query: SELECT * FROM ITEM
+    22:57:04.477 [main] INFO  c.m.s.b.i.reader.AllTablesItemReader - Finished reading rows for query: SELECT * FROM PRODUCT
+    22:57:04.489 [main] INFO  c.m.s.b.i.writer.MarkLogicItemWriter - On stream close, waiting for BatchWriter to complete
+    22:57:04.489 [main] INFO  c.m.client.batch.RestBatchWriter - Calling shutdown on thread pool
+    22:57:05.320 [ThreadPoolTaskExecutor-8] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    22:57:05.322 [ThreadPoolTaskExecutor-4] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    22:57:05.324 [ThreadPoolTaskExecutor-1] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    22:57:05.326 [ThreadPoolTaskExecutor-2] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    22:57:05.326 [ThreadPoolTaskExecutor-7] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    22:57:05.327 [ThreadPoolTaskExecutor-3] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    22:57:05.330 [ThreadPoolTaskExecutor-6] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    22:57:05.333 [ThreadPoolTaskExecutor-5] INFO  c.m.client.batch.RestBatchWriter - Wrote 100 documents to MarkLogic
+    22:57:05.334 [main] INFO  c.m.client.batch.RestBatchWriter - Thread pool finished shutdown
+    22:57:05.334 [main] INFO  c.m.client.batch.RestBatchWriter - Releasing DatabaseClient instances...
+    22:57:05.334 [main] INFO  c.m.client.batch.RestBatchWriter - Finished releasing DatabaseClient instances
+    22:57:05.334 [main] INFO  c.m.s.b.i.writer.MarkLogicItemWriter - On stream close, finished waiting for BatchWriter to complete
+    22:57:05.334 [main] INFO  c.m.s.b.i.writer.MarkLogicItemWriter - Final Write Count: 800
 
+When using the sample H2 database, you only need to run "setupH2" once. And of course, when you're using your own 
+database, you can remove this task from build.gradle.
 
-The default configuration is all in gradle.properties. You can modify those properties on the command line, e.g.
+The migration configuration properties are all in gradle.properties. You can modify those properties on the command line
+via Gradle's -P mechanism, e.g.
 
     ./gradlew migrate -Phosts=host1,host2,host3 -PthreadCount=32
 
@@ -85,7 +86,7 @@ Or load the data via XCC instead of the REST API:
 
     ./gradlew migrate -Pxcc=true
 
-Or just modify the file and start building your own application. 
+Or just modify gradle.properties and start building your own application. 
 
 You can also see all the supported arguments:
 
@@ -98,34 +99,34 @@ Comments,questions - please file an issue.
 To try this on your own database, you'll need to change the JDBC connection properties in gradle.properties - jdbcUrl,
 jdbcUsername, and jdbcPassword. 
 
-If you're not using MySQL, you'll need to change the jdbcDriver property in gradle.properties. You'll also need to add
-your JDBC driver to the Gradle "runtime" classpath. The MySQL driver is currently in that classpath via the following 
+Assuming you're not using H2, you'll also need to change the jdbcDriver property in gradle.properties. You'll need to add
+your JDBC driver to the Gradle "runtime" classpath. The H2 driver is currently in that classpath via the following 
 line in build.gradle:
 
-    runtime "mysql:mysql-connector-java:5.1.6"
+    runtime "com.h2database:h2:1.4.193"
 
-If you're not using MySQL, you can either change that line to reference your own JDBC driver in a Maven repository, or
+You can either change that line to reference your own JDBC driver in a Maven repository, or
 remove it and replace it with a line that specifies where your driver is on the classpath, e.g.:
 
     runtime files("./path/to/ojdbc-6.jar")
 
-Next, you'll most likely need to change the SQL query and the basics of how documents are created in MarkLogic. You can 
-do that by modifying the following properties in gradle.properties:
-    
-    sql=SELECT * FROM film
-    rootLocalName=Film
-    collections=film,migrated
-    permissions=rest-reader,read,rest-writer,update
+Next, by default, the migration program tries to migrate all tables that it finds in the database. You can either retain
+this behavior by keeping the "allTables" property set to "true", or you can set that property to "false" and specify a
+SQL query, a local name for the root element of each XML document that's written, and the collections to put each 
+document into - example:
 
-At this point, you're able to reconfigure the migration job to talk to any database, run any SQL query, and set any
-local name for the root element, any collection, and any permission. 
+    sql=SELECT * FROM Customer
+    rootLocalName=customer
+    collections=customer,migrated
 
-Alternatively, you can set the "allTables" property to true in order to query every table in the database. In this case,
-it's best to set "collections" to something generic, as the table name will also be used as a collection name for each
-document:
+If you do keep "allTables" set to "true", it's best to keep "collections" set to something generic that each document
+will be written to - example:
 
     allTables=true
     collections=migrated
+
+At this point, you're able to reconfigure the migration job to talk to any database, run any SQL query, and set any
+local name for the root element, any collection, and any permission. 
 
 ### But how do I modify the XML that's inserted into MarkLogic?
 
@@ -149,3 +150,6 @@ and you'll need to modify the Processor as well, which expects a ColumnMap.
 though, you'll be able to retain this part by having your Reader and/or Processor return a DocumenteWriteOperation, 
 which encapsulates all the information needed to write a single document to MarkLogic.
 
+### How do I setup automated tests for my migration program?
+
+TODO Coming soon!

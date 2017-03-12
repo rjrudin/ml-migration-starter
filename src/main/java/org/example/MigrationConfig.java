@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -95,8 +96,6 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	                 @Value("#{jobParameters['sql']}") String sql,
 	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
 
-		logger.info("ALL TABLES: " + allTables);
-
 		// Determine the Spring Batch chunk size
 		int chunkSize = 100;
 		String prop = env.getProperty(Options.CHUNK_SIZE);
@@ -106,8 +105,12 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 
 		logger.info("Chunk size: " + env.getProperty(Options.CHUNK_SIZE));
 		logger.info("Hosts: " + hosts);
-		logger.info("SQL: " + sql);
-		logger.info("Root local name: " + rootLocalName);
+		if (StringUtils.hasText(allTables)) {
+			logger.info("Migrate all tables: " + allTables);
+		} else {
+			logger.info("SQL: " + sql);
+			logger.info("Root local name: " + rootLocalName);
+		}
 		logger.info("Collections: " + collections);
 		logger.info("Permissions: " + permissions);
 		logger.info("Thread count: " + threadCount);
@@ -233,7 +236,7 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	 * Uses the very simple Spring JDBC DriverManagerDataSource to build a DataSource for our Reader to use. Since we
 	 * by default only make a single JDBC query in this migration, we don't need any connection pooling support. But
 	 * this is easily added via the many DataSource implementations that Spring JDBC providers.
-	 *
+	 * <p>
 	 * Note that we're able to pull connection properties directly from the Spring Environment here.
 	 *
 	 * @return
