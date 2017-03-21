@@ -80,11 +80,15 @@ database, you can remove this task from build.gradle.
 The migration configuration properties are all in gradle.properties. You can modify those properties on the command line
 via Gradle's -P mechanism, e.g.
 
-    ./gradlew migrate -Phosts=host1,host2,host3 -PthreadCount=32
+    ./gradlew migrate -Phosts=host1,host2,host3 -Pthread_count=32
 
 Or load the data via XCC instead of the REST API:
 
     ./gradlew migrate -Pxcc=true
+
+Or load the data as JSON instead of XML:
+
+    ./gradlew migrate -Pdocument_type=json
 
 Or just modify gradle.properties and start building your own application. 
 
@@ -96,10 +100,10 @@ Comments,questions - please file an issue.
 
 ## How do I make this work with my own database?
 
-To try this on your own database, you'll need to change the JDBC connection properties in gradle.properties - jdbcUrl,
-jdbcUsername, and jdbcPassword. 
+To try this on your own database, you'll need to change the JDBC connection properties in gradle.properties - jdbc_url,
+jdbc_username, and jdbc_password. 
 
-Assuming you're not using H2, you'll also need to change the jdbcDriver property in gradle.properties. You'll need to add
+Assuming you're not using H2, you'll also need to change the jdbc_driver property in gradle.properties. You'll need to add
 your JDBC driver to the Gradle "runtime" classpath. The H2 driver is currently in that classpath via the following 
 line in build.gradle:
 
@@ -111,18 +115,18 @@ remove it and replace it with a line that specifies where your driver is on the 
     runtime files("./path/to/ojdbc-6.jar")
 
 Next, by default, the migration program tries to migrate all tables that it finds in the database. You can either retain
-this behavior by keeping the "allTables" property set to "true", or you can set that property to "false" and specify a
+this behavior by keeping the "all_tables" property set to "true", or you can set that property to "false" and specify a
 SQL query, a local name for the root element of each XML document that's written, and the collections to put each 
 document into - example:
 
     sql=SELECT * FROM Customer
-    rootLocalName=customer
+    root_local_name=customer
     collections=customer,migrated
 
-If you do keep "allTables" set to "true", it's best to keep "collections" set to something generic that each document
+If you do keep "all_tables" set to "true", it's best to keep "collections" set to something generic that each document
 will be written to - example:
 
-    allTables=true
+    all_tables=true
     collections=migrated
 
 At this point, you're able to reconfigure the migration job to talk to any database, run any SQL query, and set any

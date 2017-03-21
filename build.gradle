@@ -43,17 +43,18 @@ task migrate(type: JavaExec) {
 		"--password", password,
 		"--database", database,
 		"--auth", auth,
-		"--threadCount", threadCount,
-		"--jdbc_driver", jdbcDriver,
-		"--jdbc_url", jdbcUrl,
-		"--jdbc_username", jdbcUsername,
-		"--jdbc_password", jdbcPassword,
+		"--thread_count", thread_count,
+		"--jdbc_driver", jdbc_driver,
+		"--jdbc_url", jdbc_url,
+		"--jdbc_username", jdbc_username,
+		"--jdbc_password", jdbc_password,
 		"--sql", sql,
-		"--rootLocalName", rootLocalName,
+		"--root_local_name", root_local_name,
 		"--collections", collections,
 		"--permissions", permissions,
 		"--xcc", xcc,
-		"--allTables", allTables
+		"--all_tables", all_tables,
+		"--document_type", document_type
 	]
 }
 

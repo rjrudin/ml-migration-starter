@@ -11,6 +11,7 @@ import com.marklogic.client.helper.LoggingObject;
 import com.marklogic.spring.batch.Options;
 import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
+import com.marklogic.spring.batch.columnmap.JacksonColumnMapSerializer;
 import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
 import com.marklogic.spring.batch.item.reader.AllTablesItemReader;
 import com.marklogic.spring.batch.item.writer.MarkLogicItemWriter;
@@ -55,14 +56,13 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	 */
 	@Override
 	public void configureOptionParser(OptionParser parser) {
-		parser.accepts("allTables", "Set this to 'true' to ignore the 'sql' argument and read rows from all tables").withRequiredArg();
+		parser.accepts("all_tables", "Set this to 'true' to ignore the 'sql' argument and read rows from all tables").withRequiredArg();
 		parser.accepts("collections", "Comma-delimited sequence of collections to insert each document into").withRequiredArg();
 		parser.accepts("hosts", "Comma-delimited sequence of host names of MarkLogic nodes to write documents to").withRequiredArg();
 		parser.accepts("permissions", "Comma-delimited sequence of permissions to apply to each document; role,capability,role,capability,etc").withRequiredArg();
-		parser.accepts("rootLocalName", "Name of the root element in each document written to MarkLogic").withRequiredArg();
-		parser.accepts("rootNamepaceUri", "Namespace URI of the root element in each document written to MarkLogic").withRequiredArg();
+		parser.accepts("root_local_name", "Name of the root element in each document written to MarkLogic").withRequiredArg();
 		parser.accepts("sql", "The SQL query for selecting rows to migrate").withRequiredArg();
-		parser.accepts("threadCount", "The number of threads to use for writing to MarkLogic").withRequiredArg();
+		parser.accepts("thread_count", "The number of threads to use for writing to MarkLogic").withRequiredArg();
 		parser.accepts("xcc", "Set to 'true' to use XCC instead of the REST API to write to MarkLogic").withRequiredArg();
 	}
 
@@ -87,14 +87,15 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 	@Bean
 	@JobScope
 	public Step step(StepBuilderFactory stepBuilderFactory,
-	                 @Value("#{jobParameters['allTables']}") String allTables,
+	                 @Value("#{jobParameters['all_tables']}") String allTables,
 	                 @Value("#{jobParameters['xcc']}") String xcc,
 	                 @Value("#{jobParameters['collections']}") String collections,
 	                 @Value("#{jobParameters['permissions']}") String permissions,
 	                 @Value("#{jobParameters['hosts']}") String hosts,
-	                 @Value("#{jobParameters['threadCount'] ?: 4}") Integer threadCount,
+	                 @Value("#{jobParameters['thread_count'] ?: 4}") Integer threadCount,
 	                 @Value("#{jobParameters['sql']}") String sql,
-	                 @Value("#{jobParameters['rootLocalName']}") String rootLocalName) {
+	                 @Value("#{jobParameters['root_local_name']}") String rootLocalName,
+	                 @Value("#{jobParameters['document_type']}") String documentType) {
 
 		// Determine the Spring Batch chunk size
 		int chunkSize = 100;
@@ -131,8 +132,13 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 			reader = r;
 		}
 
-		// Processor - this is a very basic implementation for converting a column map to an XML string
-		ColumnMapSerializer serializer = new DefaultStaxColumnMapSerializer();
+		// Processor - this is a very basic implementation for converting a column map to an XML or JSON string
+		ColumnMapSerializer serializer = null;
+		if (documentType != null && documentType.toLowerCase().equals("json")) {
+			serializer = new JacksonColumnMapSerializer();
+		} else {
+			serializer = new DefaultStaxColumnMapSerializer();
+		}
 		ColumnMapProcessor processor = new ColumnMapProcessor(serializer);
 		if (rootLocalName != null) {
 			processor.setRootLocalName(rootLocalName);
@@ -142,6 +148,9 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		}
 		if (permissions != null) {
 			processor.setPermissions(permissions.split(","));
+		}
+		if (documentType != null && documentType.toLowerCase().equals("json")) {
+			processor.setUriSuffix(".json");
 		}
 
 		// Writer - BatchWriter is from ml-javaclient-util, MarkLogicItemWriter is from

@@ -26,6 +26,8 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 
 	private String[] collections;
 
+	private String uriSuffix = ".xml";
+
 	public ColumnMapProcessor(ColumnMapSerializer columnMapSerializer) {
 		this.columnMapSerializer = columnMapSerializer;
 	}
@@ -42,7 +44,7 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 		String content = columnMapSerializer.serializeColumnMap(item, thisRootLocalName);
 
 		String uuid = UUID.randomUUID().toString();
-		String uri = "/" + thisRootLocalName + "/" + uuid + ".xml";
+		String uri = "/" + thisRootLocalName + "/" + uuid + uriSuffix;
 
 		DocumentMetadataHandle metadata = new DocumentMetadataHandle();
 		if (collections != null) {
@@ -78,5 +80,9 @@ public class ColumnMapProcessor implements ItemProcessor<Map<String, Object>, Do
 
 	public void setTableNameKey(String tableNameKey) {
 		this.tableNameKey = tableNameKey;
+	}
+
+	public void setUriSuffix(String uriSuffix) {
+		this.uriSuffix = uriSuffix;
 	}
 }
