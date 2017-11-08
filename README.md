@@ -1,7 +1,7 @@
-# Making migrations from relational databases to MarkLogic easy
+# Making database migrations to MarkLogic easy
 
 This is a starter kit for creating an application that uses [Spring Batch](http://projects.spring.io/spring-batch/) and
-[marklogic-spring-batch](https://github.com/sastafford/marklogic-spring-batch) for migrating data from any RDBMS into 
+[marklogic-spring-batch](https://github.com/sastafford/marklogic-spring-batch) for migrating data from any database with a JDBC driver into 
 MarkLogic. The intent is to simplify the process of creating a migration application using Spring Batch by 
 leveraging the reusable components in marklogic-spring-batch, and by organizing a Gradle-based project for you that you
 can clone/fork/etc to quickly extend and customize for your specific needs. 
