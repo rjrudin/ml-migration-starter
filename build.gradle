@@ -23,7 +23,7 @@ dependencies {
 
 }
 
-task migrate(type: JavaExec) {
+task migrateXml(type: JavaExec) {
 	description = "Run the migration program"
 	classpath = sourceSets.test.runtimeClasspath
 	main = "com.marklogic.batch.rdbms.Main"
@@ -37,6 +37,23 @@ task migrate(type: JavaExec) {
 		"--output_uri_prefix", "/h2/",
 		"--uri_id", "ID",
 		"--document_type", "xml"
+	]
+}
+
+task migrateJson(type: JavaExec) {
+	description = "Run the migration program"
+	classpath = sourceSets.test.runtimeClasspath
+	main = "com.marklogic.batch.rdbms.Main"
+	args = [
+			"--chunk", 50,
+			"--thread_count", 4,
+			"--collections", "raw",
+			"--permissions", permissions,
+			"--all_tables", "true",
+			"--root_local_name", "_tableName",
+			"--output_uri_prefix", "/h2/",
+			"--uri_id", "ID",
+			"--document_type", "json"
 	]
 }
 
