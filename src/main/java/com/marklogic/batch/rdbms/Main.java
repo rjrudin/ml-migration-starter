@@ -17,7 +17,7 @@ public class Main extends CommandLineJobRunner {
         finalArgs[3] = constantArgs[3];
 
         for (int i = 0; i < args.length; i++) {
-            finalArgs[i + 4] = args[0];
+            finalArgs[i + 4] = args[i];
         }
 
         new Main().execute(finalArgs);

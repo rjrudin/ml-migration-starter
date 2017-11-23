@@ -33,26 +33,8 @@ public class ApplicationProperties {
 
     @Autowired
     public void setPort(
-            @Value("${marklogic.port}") int port) {
+            @Value("${marklogic.port:8000}") Integer port) {
         this.markLogicPort = port;
-    }
-
-    public List<String> getMarkLogicHosts() {
-        return markLogicHosts;
-    }
-
-    public int getMarkLogicPort() {
-        return markLogicPort;
-    }
-
-    public String getMarkLogicUsername() {
-        return markLogicUsername;
-    }
-
-    @Autowired
-    public void setMarkLogicUsername(
-            @Value("${marklogic.username}") String markLogicUsername) {
-        this.markLogicUsername = markLogicUsername;
     }
 
     public String getMarkLogicPassword() {
@@ -103,6 +85,24 @@ public class ApplicationProperties {
     public void setJdbcPassword(
             @Value("${jdbc.password}") String password) {
         this.jdbcPassword = password;
+    }
+
+    public List<String> getMarkLogicHosts() {
+        return markLogicHosts;
+    }
+
+    public int getMarkLogicPort() {
+        return markLogicPort;
+    }
+
+    public String getMarkLogicUsername() {
+        return markLogicUsername;
+    }
+
+    @Autowired
+    public void setMarkLogicUsername(
+            @Value("${marklogic.username}") String markLogicUsername) {
+        this.markLogicUsername = markLogicUsername;
     }
 
     protected DatabaseClient getDatabaseClient() {

@@ -23,12 +23,15 @@ import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 
 import java.util.Map;
 
 @EnableBatchProcessing
-@Import(MarkLogicBatchConfiguration.class)
+@Import(ApplicationProperties.class)
+@PropertySource(value = "classpath:application.properties", ignoreResourceNotFound = true)
+@PropertySource(value = "file:application.properties", ignoreResourceNotFound = true)
 public class MigrateRdbmsToMarkLogicJobConfig {
 
     protected final static Logger logger = LoggerFactory.getLogger(MigrateRdbmsToMarkLogicJobConfig.class);

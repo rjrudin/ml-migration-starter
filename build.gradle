@@ -28,25 +28,12 @@ task migrate(type: JavaExec) {
 	classpath = sourceSets.test.runtimeClasspath
 	main = "com.marklogic.batch.rdbms.Main"
 	args = [
-		"--chunk", chunk,
-		"--hosts", hosts,
-		"--port", port,
-		"--username", username,
-		"--password", password,
-		"--database", database,
-		"--auth", auth,
-		"--thread_count", thread_count,
-		"--jdbc_driver", jdbc_driver,
-		"--jdbc_url", jdbc_url,
-		"--jdbc_username", jdbc_username,
-		"--jdbc_password", jdbc_password,
-		"--sql", sql,
-		"--root_local_name", root_local_name,
-		"--collections", collections,
+		"--chunk", 50,
+		"--thread_count", 4,
+		"--collections", "raw",
 		"--permissions", permissions,
-		"--xcc", xcc,
-		"--all_tables", all_tables,
-		"--document_type", document_type
+		"--all_tables", "true",
+		"--document_type", "xml"
 	]
 }
 
@@ -63,7 +50,7 @@ task loadH2Data(type: JavaExec) {
 	classpath = configurations.testRuntime
 	main = "org.h2.tools.RunScript"
 	args = [
-			"-url", "jdbc:h2:file:./h2data/sample",
+			"-url", "jdbc:h2:file:./src/test/resources/h2/sample",
 			"-user", "sa",
 			"-script", "./src/test/resources/h2setup.sql"
 	]
