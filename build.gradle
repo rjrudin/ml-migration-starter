@@ -57,6 +57,23 @@ task migrateJson(type: JavaExec) {
 	]
 }
 
+task migrateSql(type: JavaExec) {
+	description = "Run the migration program"
+	classpath = sourceSets.test.runtimeClasspath
+	main = "com.marklogic.batch.rdbms.Main"
+	args = [
+			"--chunk", 50,
+			"--thread_count", 4,
+			"--collections", "raw",
+			"--permissions", permissions,
+			"--sql", "SELECT * FROM CUSTOMER",
+			"--root_local_name", "invoice",
+			"--output_uri_prefix", "/h2/",
+			"--uri_id", "ID",
+			"--document_type", "xml"
+	]
+}
+
 task help(type: JavaExec) {
 	description = "See a list of all supported command line arguments"
 	classpath = sourceSets.main.runtimeClasspath
