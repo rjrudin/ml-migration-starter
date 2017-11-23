@@ -57,7 +57,9 @@ public class MigrateRdbmsToMarkLogicJobConfig {
                      @Value("#{jobParameters['chunk_size'] ?: 100}") Integer chunkSize,
                      @Value("#{jobParameters['sql']}") String sql,
                      @Value("#{jobParameters['root_local_name']}") String rootLocalName,
-                     @Value("#{jobParameters['document_type']}") String documentType) {
+                     @Value("#{jobParameters['document_type']}") String documentType,
+                     @Value("#{jobParameters['output_uri_prefix']}") String outputUriPrefix,
+                     @Value("#{jobParameters['uri_id']}") String uriId) {
 
         ItemReader<Map<String, Object>> reader = null;
         if ("true".equals(allTables)) {
@@ -83,7 +85,7 @@ public class MigrateRdbmsToMarkLogicJobConfig {
             serializer = new DefaultStaxColumnMapSerializer();
         }
 
-        ColumnMapProcessor processor = new ColumnMapProcessor(serializer);
+        ColumnMapProcessor processor = new ColumnMapProcessor(serializer, new ColumnMapUriGenerator(uriId));
         if (rootLocalName != null) {
             processor.setRootLocalName(rootLocalName);
         }
@@ -97,7 +99,10 @@ public class MigrateRdbmsToMarkLogicJobConfig {
         DefaultUriTransformer uriTransformer = new DefaultUriTransformer();
         if (documentType != null && documentType.toLowerCase().equals("json")) {
             uriTransformer.setOutputUriSuffix(".json");
+        } else {
+            uriTransformer.setOutputUriSuffix(".xml");
         }
+        uriTransformer.setOutputUriPrefix(outputUriPrefix);
         MarkLogicItemWriter writer = new MarkLogicItemWriter(properties.getDatabaseClient());
         writer.setUriTransformer(uriTransformer);
         writer.setThreadCount(threadCount);
