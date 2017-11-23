@@ -10,22 +10,10 @@ repositories {
 	maven { url "http://developer.marklogic.com/maven2" }
 }
 
-configurations {
-	all {
-		exclude module: 'commons-logging'
-		exclude module: 'log4j'
-	}
-}
-
 dependencies {
 	// Core dependencies needed for using Spring Batch, Spring JDBC, and marklogic-spring-batch
 	compile "com.marklogic:marklogic-spring-batch-core:1.3.1"
 	compile "com.marklogic:spring-batch-rdbms:1.3.0"
-
-	// Logging Library
-	compile "org.slf4j:slf4j-api:1.7.25"
-	compile "org.slf4j:slf4j-log4j12:1.7.25"
-	compile "org.apache.logging.log4j:log4j-api:2.9.1"
 
 	// Using H2 as a sample database; can pull its JDBC driver from a Maven repository
 	testRuntime "com.h2database:h2:1.4.193"
@@ -37,7 +25,7 @@ dependencies {
 
 task migrate(type: JavaExec) {
 	description = "Run the migration program"
-	classpath = sourceSets.main.runtimeClasspath
+	classpath = sourceSets.test.runtimeClasspath
 	main = "com.marklogic.batch.rdbms.Main"
 	args = [
 		"--chunk", chunk,
@@ -65,21 +53,19 @@ task migrate(type: JavaExec) {
 task help(type: JavaExec) {
 	description = "See a list of all supported command line arguments"
 	classpath = sourceSets.main.runtimeClasspath
-	main = "org.example.MigrationMain"
+	main = "com.marklogic.batch.rdbms.Main"
 	args = [
-		"--config", "org.example.MigrationConfig",
 		"--help"
 	]
 }
 
-task setupH2(type: JavaExec) {
-	description = "Setup a file-based instance of H2 with sample data; can remove this if not using H2"
-	classpath = configurations.runtime
+task loadH2Data(type: JavaExec) {
+	classpath = configurations.testRuntime
 	main = "org.h2.tools.RunScript"
 	args = [
-		"-url", "jdbc:h2:file:./h2data/sample",
-		"-user", "sa",
-		"-password", "password",
-		"-script", "./h2setup.sql"
+			"-url", "jdbc:h2:file:./h2data/sample",
+			"-user", "sa",
+			"-script", "./src/test/resources/h2setup.sql"
 	]
 }
+
