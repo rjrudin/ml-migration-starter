@@ -33,7 +33,9 @@ task migrate(type: JavaExec) {
 		"--collections", "raw",
 		"--permissions", permissions,
 		"--all_tables", "true",
-		"--document_type", "xml"
+		"--root_local_name", "_tableName",
+		"--document_type", "xml",
+
 	]
 }
 
