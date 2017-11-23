@@ -6,7 +6,7 @@ import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.JacksonColumnMapSerializer;
 import com.marklogic.spring.batch.config.MarkLogicBatchConfiguration;
 import com.marklogic.spring.batch.item.processor.ColumnMapProcessor;
-import com.marklogic.spring.batch.item.reader.AllTablesItemReader;
+import com.marklogic.spring.batch.item.rdbms.AllTablesItemReader;
 import com.marklogic.spring.batch.item.writer.MarkLogicItemWriter;
 import com.marklogic.spring.batch.item.writer.support.DefaultUriTransformer;
 import org.slf4j.Logger;
