@@ -19,33 +19,6 @@ public class ApplicationProperties {
     private String jdbcUsername;
     private String jdbcPassword;
 
-    //MarkLogic ConnectionProperties
-    private List<String> markLogicHosts;
-    private int markLogicPort;
-    private String markLogicUsername;
-    private String markLogicPassword;
-
-    @Autowired
-    public void setHosts(
-            @Value("#{'${marklogic.hosts}'.split(',')}") List<String> hosts) {
-        this.markLogicHosts = hosts;
-    }
-
-    @Autowired
-    public void setPort(
-            @Value("${marklogic.port:8000}") Integer port) {
-        this.markLogicPort = port;
-    }
-
-    public String getMarkLogicPassword() {
-        return markLogicPassword;
-    }
-
-    @Autowired
-    public void setMarkLogicPassword(
-            @Value("${marklogic.password}") String markLogicPassword) {
-        this.markLogicPassword = markLogicPassword;
-    }
 
     public String getJdbcUrl() {
         return jdbcUrl;
@@ -85,32 +58,6 @@ public class ApplicationProperties {
     public void setJdbcPassword(
             @Value("${jdbc.password}") String password) {
         this.jdbcPassword = password;
-    }
-
-    public List<String> getMarkLogicHosts() {
-        return markLogicHosts;
-    }
-
-    public int getMarkLogicPort() {
-        return markLogicPort;
-    }
-
-    public String getMarkLogicUsername() {
-        return markLogicUsername;
-    }
-
-    @Autowired
-    public void setMarkLogicUsername(
-            @Value("${marklogic.username}") String markLogicUsername) {
-        this.markLogicUsername = markLogicUsername;
-    }
-
-    protected DatabaseClient getDatabaseClient() {
-        return DatabaseClientFactory.newClient(
-                getMarkLogicHosts().get(0),
-                getMarkLogicPort(),
-                new DatabaseClientFactory.DigestAuthContext(getMarkLogicUsername(), getMarkLogicPassword())
-        );
     }
 
     protected DataSource getDataSource() {

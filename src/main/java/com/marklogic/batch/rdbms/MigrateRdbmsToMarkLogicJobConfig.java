@@ -1,9 +1,11 @@
 package com.marklogic.batch.rdbms;
 
 import com.marklogic.client.document.DocumentWriteOperation;
+import com.marklogic.client.ext.helper.DatabaseClientProvider;
 import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.JacksonColumnMapSerializer;
+import com.marklogic.spring.batch.config.MarkLogicBatchConfiguration;
 import com.marklogic.spring.batch.item.processor.ColumnMapProcessor;
 import com.marklogic.spring.batch.item.rdbms.AllTablesItemReader;
 import com.marklogic.spring.batch.item.writer.MarkLogicItemWriter;
@@ -28,7 +30,10 @@ import org.springframework.jdbc.core.ColumnMapRowMapper;
 import java.util.Map;
 
 @EnableBatchProcessing
-@Import(ApplicationProperties.class)
+@Import(value = {
+        ApplicationProperties.class,
+        com.marklogic.spring.batch.config.MarkLogicBatchConfiguration.class,
+        com.marklogic.spring.batch.config.MarkLogicConfiguration.class})
 @PropertySource(value = "classpath:application.properties", ignoreResourceNotFound = true)
 @PropertySource(value = "file:application.properties", ignoreResourceNotFound = true)
 public class MigrateRdbmsToMarkLogicJobConfig {
@@ -46,6 +51,7 @@ public class MigrateRdbmsToMarkLogicJobConfig {
     @Bean
     @JobScope
     public Step step(StepBuilderFactory stepBuilderFactory,
+                     DatabaseClientProvider databaseClientProvider,
                      ApplicationProperties properties,
                      @Value("#{jobParameters['all_tables']}") String allTables,
                      @Value("#{jobParameters['xcc']}") String xcc,
@@ -102,7 +108,7 @@ public class MigrateRdbmsToMarkLogicJobConfig {
             uriTransformer.setOutputUriSuffix(".xml");
         }
         uriTransformer.setOutputUriPrefix(outputUriPrefix);
-        MarkLogicItemWriter writer = new MarkLogicItemWriter(properties.getDatabaseClient());
+        MarkLogicItemWriter writer = new MarkLogicItemWriter(databaseClientProvider.getDatabaseClient());
         writer.setUriTransformer(uriTransformer);
         writer.setThreadCount(threadCount);
         writer.setBatchSize(chunkSize);
