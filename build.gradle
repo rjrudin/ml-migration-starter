@@ -1,6 +1,7 @@
 plugins {
 	id "java"
 	id "com.github.jk1.dependency-license-report" version "0.3.11"
+	id "application"
 }
 
 repositories {
@@ -59,3 +60,4 @@ task loadH2Data(type: JavaExec) {
 }
 
 migrate.dependsOn loadH2Data
+mainClassName = "com.marklogic.batch.rdbms.Main"
