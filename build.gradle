@@ -58,3 +58,4 @@ task loadH2Data(type: JavaExec) {
 	]
 }
 
+migrate.dependsOn loadH2Data
