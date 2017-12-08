@@ -4,7 +4,6 @@ plugins {
 }
 
 repositories {
-	mavenLocal()
 	jcenter()
 	mavenCentral()
 	maven { url "http://developer.marklogic.com/maven2" }
@@ -23,7 +22,7 @@ dependencies {
 
 }
 
-task migrateXml(type: JavaExec) {
+task migrate(type: JavaExec) {
 	description = "Run the migration program"
 	classpath = sourceSets.test.runtimeClasspath
 	main = "com.marklogic.batch.rdbms.Main"
@@ -37,40 +36,6 @@ task migrateXml(type: JavaExec) {
 		"--output_uri_prefix", "/h2/",
 		"--uri_id", "ID",
 		"--document_type", "xml"
-	]
-}
-
-task migrateJson(type: JavaExec) {
-	description = "Run the migration program"
-	classpath = sourceSets.test.runtimeClasspath
-	main = "com.marklogic.batch.rdbms.Main"
-	args = [
-			"--chunk", 50,
-			"--thread_count", 4,
-			"--collections", "raw",
-			"--permissions", "rest-reader,read,rest-writer,update",
-			"--all_tables", "true",
-			"--root_local_name", "_tableName",
-			"--output_uri_prefix", "/h2/",
-			"--uri_id", "ID",
-			"--document_type", "json"
-	]
-}
-
-task migrateSql(type: JavaExec) {
-	description = "Run the migration program"
-	classpath = sourceSets.test.runtimeClasspath
-	main = "com.marklogic.batch.rdbms.Main"
-	args = [
-			"--chunk", 50,
-			"--thread_count", 4,
-			"--collections", "raw",
-			"--permissions", "rest-reader,read,rest-writer,update",
-			"--sql", "SELECT * FROM CUSTOMER",
-			"--root_local_name", "invoice",
-			"--output_uri_prefix", "/h2/",
-			"--uri_id", "ID",
-			"--document_type", "xml"
 	]
 }
 

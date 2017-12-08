@@ -16,6 +16,5 @@ public class ColumnMapUriGenerator implements UriGenerator<Map<String, Object>> 
     @Override
     public String generateUri(Map<String, Object> stringObjectMap) throws Exception {
         return stringObjectMap.containsKey(columnId) ?
-                stringObjectMap.get(columnId).toString() : UUID.randomUUID().toString();
-    }
+                stringObjectMap.get(columnId).toString() : UUID.randomUUID().toString();    }
 }

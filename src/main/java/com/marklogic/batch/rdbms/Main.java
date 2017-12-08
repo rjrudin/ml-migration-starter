@@ -28,6 +28,7 @@ public class Main extends CommandLineJobRunner {
         OptionParser parser = super.buildOptionParser();
         parser.acceptsAll(Arrays.asList("h", HELP), "Show help").forHelp();
         parser.accepts("all_tables", "Set this to 'true' to ignore the 'sql' argument and read rows from all tables").withRequiredArg();
+        parser.accepts("document_type", "Valid values: XML, JSON").withRequiredArg().defaultsTo("xml");
         parser.accepts("collections", "Comma-delimited sequence of collections to insert each document into").withRequiredArg().defaultsTo("raw");
         parser.accepts("hosts", "Comma-delimited sequence of host names of MarkLogic nodes to write documents to").withRequiredArg();
         parser.accepts("permissions", "Comma-delimited sequence of permissions to apply to each document; role,capability,role,capability,etc").withRequiredArg();
