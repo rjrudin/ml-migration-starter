@@ -2,22 +2,14 @@ package org.example;
 
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
-import com.marklogic.client.batch.BatchWriter;
-import com.marklogic.client.batch.BatchWriterSupport;
-import com.marklogic.client.batch.RestBatchWriter;
-import com.marklogic.client.batch.XccBatchWriter;
 import com.marklogic.client.document.DocumentWriteOperation;
-import com.marklogic.client.helper.LoggingObject;
-import com.marklogic.spring.batch.Options;
 import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.JacksonColumnMapSerializer;
-import com.marklogic.spring.batch.config.support.OptionParserConfigurer;
-import com.marklogic.spring.batch.item.reader.AllTablesItemReader;
+import com.marklogic.spring.batch.item.processor.ColumnMapProcessor;
+import com.marklogic.spring.batch.item.rdbms.AllTablesItemReader;
 import com.marklogic.spring.batch.item.writer.MarkLogicItemWriter;
-import com.marklogic.xcc.ContentSource;
-import com.marklogic.xcc.ContentSourceFactory;
-import joptsimple.OptionParser;
+import com.marklogic.spring.batch.item.writer.support.DefaultUriTransformer;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -27,119 +19,89 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.util.StringUtils;
 
-import javax.sql.DataSource;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Spring Configuration object that defines the Spring Batch components we need - a Reader, an optional Processor, and
- * a Writer.
+ * Spring Batch Configuration class that defines the Spring Batch job and step components, along with the job properties
+ * for the step, which does all the work.
  */
 @EnableBatchProcessing
-public class MigrationConfig extends LoggingObject implements EnvironmentAware, OptionParserConfigurer {
-
-	private Environment env;
+public class MigrationConfig {
 
 	/**
-	 * By implementing this method in OptionParserConfigurer, a client can run the MigrationMain program and ask for
-	 * help and see all of our custom command line options.
-	 *
-	 * @param parser
-	 */
-	@Override
-	public void configureOptionParser(OptionParser parser) {
-		parser.accepts("all_tables", "Set this to 'true' to ignore the 'sql' argument and read rows from all tables").withRequiredArg();
-		parser.accepts("collections", "Comma-delimited sequence of collections to insert each document into").withRequiredArg();
-		parser.accepts("hosts", "Comma-delimited sequence of host names of MarkLogic nodes to write documents to").withRequiredArg();
-		parser.accepts("permissions", "Comma-delimited sequence of permissions to apply to each document; role,capability,role,capability,etc").withRequiredArg();
-		parser.accepts("root_local_name", "Name of the root element in each document written to MarkLogic").withRequiredArg();
-		parser.accepts("sql", "The SQL query for selecting rows to migrate").withRequiredArg();
-		parser.accepts("thread_count", "The number of threads to use for writing to MarkLogic").withRequiredArg();
-		parser.accepts("xcc", "Set to 'true' to use XCC instead of the REST API to write to MarkLogic").withRequiredArg();
-	}
-
-	/**
-	 * Defines the Spring Batch job. All we need here is to give it a name.
-	 *
-	 * @param jobBuilderFactory
-	 * @param step
-	 * @return
+	 * Defines the job for Spring Batch to run. This job consists of a single step, defined below.
 	 */
 	@Bean
 	public Job job(JobBuilderFactory jobBuilderFactory, Step step) {
-		return jobBuilderFactory.get("migrationJob").start(step).build();
+		return jobBuilderFactory.get("migrateJob")
+			.start(step)
+			.build();
 	}
 
 	/**
-	 * Defines the single step in our Spring Batch job. A key feature provided by marklogic-spring-batch is that
-	 * command-line arguments can be referenced via the Value annotations shown below.
-	 *
-	 * @return
+	 * Defines the single step in the job, along with all of the job parameters for the migration process.
 	 */
 	@Bean
 	@JobScope
 	public Step step(StepBuilderFactory stepBuilderFactory,
+	                 @Value("#{jobParameters['host']}") String host,
+	                 @Value("#{jobParameters['port']}") Integer port,
+	                 @Value("#{jobParameters['username']}") String username,
+	                 @Value("#{jobParameters['password']}") String password,
+	                 @Value("#{jobParameters['jdbc_driver']}") String jdbcDriver,
+	                 @Value("#{jobParameters['jdbc_url']}") String jdbcUrl,
+	                 @Value("#{jobParameters['jdbc_username']}") String jdbcUsername,
+	                 @Value("#{jobParameters['jdbc_password']}") String jdbcPassword,
 	                 @Value("#{jobParameters['all_tables']}") String allTables,
-	                 @Value("#{jobParameters['xcc']}") String xcc,
+	                 @Value("#{jobParameters['chunk_size']}") Integer chunkSize,
 	                 @Value("#{jobParameters['collections']}") String collections,
+	                 @Value("#{jobParameters['document_type']}") String documentType,
+	                 @Value("#{jobParameters['output_uri_prefix']}") String outputUriPrefix,
 	                 @Value("#{jobParameters['permissions']}") String permissions,
-	                 @Value("#{jobParameters['hosts']}") String hosts,
-	                 @Value("#{jobParameters['thread_count'] ?: 4}") Integer threadCount,
-	                 @Value("#{jobParameters['sql']}") String sql,
 	                 @Value("#{jobParameters['root_local_name']}") String rootLocalName,
-	                 @Value("#{jobParameters['document_type']}") String documentType) {
+	                 @Value("#{jobParameters['sql']}") String sql,
+	                 @Value("#{jobParameters['thread_count']}") Integer threadCount,
+	                 @Value("#{jobParameters['uri_id']}") String uriId) {
 
-		// Determine the Spring Batch chunk size
-		int chunkSize = 100;
-		String prop = env.getProperty(Options.CHUNK_SIZE);
-		if (prop != null) {
-			chunkSize = Integer.parseInt(prop);
-		}
+		// Construct a simple DataSource that Spring Batch will use to connect to an RDBMS
+		DriverManagerDataSource dataSource = new DriverManagerDataSource();
+		dataSource.setDriverClassName(jdbcDriver);
+		dataSource.setUrl(jdbcUrl);
+		dataSource.setUsername(jdbcUsername);
+		dataSource.setPassword(jdbcPassword);
 
-		logger.info("Chunk size: " + env.getProperty(Options.CHUNK_SIZE));
-		logger.info("Hosts: " + hosts);
-		if (StringUtils.hasText(allTables)) {
-			logger.info("Migrate all tables: " + allTables);
-		} else {
-			logger.info("SQL: " + sql);
-			logger.info("Root local name: " + rootLocalName);
-		}
-		logger.info("Collections: " + collections);
-		logger.info("Permissions: " + permissions);
-		logger.info("Thread count: " + threadCount);
-
+		// Construct a Spring Batch ItemReader that can read rows from an RDBMS
 		ItemReader<Map<String, Object>> reader = null;
 		if ("true".equals(allTables)) {
 			// Use AllTablesReader to process rows from every table
-			reader = new AllTablesItemReader(buildDataSource());
+			reader = new AllTablesItemReader(dataSource);
 		} else {
 			// Uses Spring Batch's JdbcCursorItemReader and Spring JDBC's ColumnMapRowMapper to map each row
 			// to a Map<String, Object>. Normally, if you want more control, standard practice is to bind column values to
 			// a POJO and perform any validation/transformation/etc you need to on that object.
 			JdbcCursorItemReader<Map<String, Object>> r = new JdbcCursorItemReader<Map<String, Object>>();
 			r.setRowMapper(new ColumnMapRowMapper());
-			r.setDataSource(buildDataSource());
+			r.setDataSource(dataSource);
 			r.setSql(sql);
 			r.setRowMapper(new ColumnMapRowMapper());
 			reader = r;
 		}
 
-		// Processor - this is a very basic implementation for converting a column map to an XML or JSON string
+		// marklogic-spring-batch component that is used to write a Spring ColumnMap to an XML or JSON document
 		ColumnMapSerializer serializer = null;
 		if (documentType != null && documentType.toLowerCase().equals("json")) {
 			serializer = new JacksonColumnMapSerializer();
 		} else {
 			serializer = new DefaultStaxColumnMapSerializer();
 		}
-		ColumnMapProcessor processor = new ColumnMapProcessor(serializer);
+
+		// marklogic-spring-batch component for converting a Spring ColumnMap into an XML or JSON document
+		// that can be written to MarkLogic
+		ColumnMapProcessor processor = new ColumnMapProcessor(serializer, new ColumnMapUriGenerator(uriId));
 		if (rootLocalName != null) {
 			processor.setRootLocalName(rootLocalName);
 		}
@@ -149,119 +111,33 @@ public class MigrationConfig extends LoggingObject implements EnvironmentAware, 
 		if (permissions != null) {
 			processor.setPermissions(permissions.split(","));
 		}
+
+		// marklogic-spring-batch component for generating a URI for a document
+		DefaultUriTransformer uriTransformer = new DefaultUriTransformer();
 		if (documentType != null && documentType.toLowerCase().equals("json")) {
-			processor.setUriSuffix(".json");
-		}
-
-		// Writer - BatchWriter is from ml-javaclient-util, MarkLogicItemWriter is from
-		// marklogic-spring-batch
-		BatchWriter batchWriter;
-		if ("true".equals(xcc)) {
-			batchWriter = new XccBatchWriter(buildContentSources(hosts));
+			uriTransformer.setOutputUriSuffix(".json");
 		} else {
-			batchWriter = new RestBatchWriter(buildDatabaseClients(hosts));
+			uriTransformer.setOutputUriSuffix(".xml");
 		}
-		if (threadCount != null && threadCount > 0) {
-			((BatchWriterSupport) batchWriter).setThreadCount(threadCount);
-		}
-		MarkLogicItemWriter writer = new MarkLogicItemWriter(batchWriter);
+		uriTransformer.setOutputUriPrefix(outputUriPrefix);
 
-		// Run the job!
-		logger.info("Initialized components, launching job");
+		// Construct a DatabaseClient to connect to MarkLogic. Additional command line arguments can be added to
+		// further customize this.
+		DatabaseClient client = DatabaseClientFactory.newClient(host, port, new DatabaseClientFactory.DigestAuthContext(username, password));
+
+		// Spring Batch ItemWriter for writing documents to MarkLogic
+		MarkLogicItemWriter writer = new MarkLogicItemWriter(client);
+		writer.setUriTransformer(uriTransformer);
+		writer.setThreadCount(threadCount);
+		writer.setBatchSize(chunkSize);
+
+		// Return a step with the reader, processor, and writer constructed above.
 		return stepBuilderFactory.get("step1")
 			.<Map<String, Object>, DocumentWriteOperation>chunk(chunkSize)
 			.reader(reader)
 			.processor(processor)
 			.writer(writer)
 			.build();
-	}
-
-	/**
-	 * Build a list of XCC ContentSource objects based on the value of hosts, which may be a comma-delimited string of
-	 * host names.
-	 *
-	 * @param hosts
-	 * @return
-	 */
-	protected List<ContentSource> buildContentSources(String hosts) {
-		Integer port = Integer.parseInt(env.getProperty(Options.PORT));
-		String username = env.getProperty(Options.USERNAME);
-		String password = env.getProperty(Options.PASSWORD);
-		String database = env.getProperty(Options.DATABASE);
-		logger.info("XCC username: " + username);
-		logger.info("XCC database: " + database);
-		List<ContentSource> list = new ArrayList<>();
-		if (hosts != null) {
-			for (String host : hosts.split(",")) {
-				logger.info("Creating content source for host: " + host);
-				list.add(ContentSourceFactory.newContentSource(host, port, username, password, database));
-			}
-		} else {
-			String host = env.getProperty(Options.HOST);
-			logger.info("Creating content source for host: " + host);
-			list.add(ContentSourceFactory.newContentSource(host, port, username, password, database));
-		}
-		return list;
-	}
-
-	/**
-	 * Build a list of Java Client API DatabaseClient objects based on the value of hosts, which may be a
-	 * comma-delimited string of host names.
-	 *
-	 * @param hosts
-	 * @return
-	 */
-	protected List<DatabaseClient> buildDatabaseClients(String hosts) {
-		Integer port = Integer.parseInt(env.getProperty(Options.PORT));
-		String username = env.getProperty(Options.USERNAME);
-		String password = env.getProperty(Options.PASSWORD);
-		String database = env.getProperty(Options.DATABASE);
-		String auth = env.getProperty(Options.AUTHENTICATION);
-		DatabaseClientFactory.Authentication authentication = DatabaseClientFactory.Authentication.DIGEST;
-		if (auth != null) {
-			authentication = DatabaseClientFactory.Authentication.valueOf(auth.toUpperCase());
-		}
-
-		logger.info("Client username: " + username);
-		logger.info("Client database: " + database);
-		logger.info("Client authentication: " + authentication.name());
-
-		List<DatabaseClient> databaseClients = new ArrayList<>();
-		if (hosts != null) {
-			for (String host : hosts.split(",")) {
-				logger.info("Creating client for host: " + host);
-				databaseClients.add(DatabaseClientFactory.newClient(host, port, database, username, password, authentication));
-			}
-		} else {
-			String host = env.getProperty(Options.HOST);
-			logger.info("Creating client for host: " + host);
-			databaseClients.add(DatabaseClientFactory.newClient(host, port, database, username, password, authentication));
-		}
-
-		return databaseClients;
-	}
-
-	/**
-	 * Uses the very simple Spring JDBC DriverManagerDataSource to build a DataSource for our Reader to use. Since we
-	 * by default only make a single JDBC query in this migration, we don't need any connection pooling support. But
-	 * this is easily added via the many DataSource implementations that Spring JDBC providers.
-	 * <p>
-	 * Note that we're able to pull connection properties directly from the Spring Environment here.
-	 *
-	 * @return
-	 */
-	protected DataSource buildDataSource() {
-		DriverManagerDataSource ds = new DriverManagerDataSource();
-		ds.setDriverClassName(env.getProperty(Options.JDBC_DRIVER));
-		ds.setUrl(env.getProperty(Options.JDBC_URL));
-		ds.setUsername(env.getProperty(Options.JDBC_USERNAME));
-		ds.setPassword(env.getProperty(Options.JDBC_PASSWORD));
-		return ds;
-	}
-
-	@Override
-	public void setEnvironment(Environment environment) {
-		this.env = environment;
 	}
 
 }

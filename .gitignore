@@ -4,3 +4,5 @@ build
 out
 h2data/
 *.iml
+*.mv.db
+*.trace.db

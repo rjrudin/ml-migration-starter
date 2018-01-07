@@ -9,80 +9,63 @@ repositories {
 	maven { url "http://developer.marklogic.com/maven2" }
 }
 
-configurations {
-	all {
-		exclude module: 'commons-logging'
-		exclude module: 'log4j'
-	}
-}
-
 dependencies {
 	// Core dependencies needed for using Spring Batch, Spring JDBC, and marklogic-spring-batch
-	compile ("com.marklogic:marklogic-spring-batch-core:0.11.0") {
-		exclude module: "marklogic-client-api"
-	}
-	compile "com.marklogic:marklogic-client-api:4.0.1"
-	compile "com.marklogic:ml-javaclient-util:2.12.0"
-	compile "org.springframework:spring-jdbc:4.3.5.RELEASE"
-
-	// Using H2 as a sample database; can pull its JDBC driver from a Maven repository
-	runtime "com.h2database:h2:1.4.193"
-
-	// Can reference a local JDBC driver like this (Oracle, along with others, do not publish their JDBC driver to a public repo)
-	// runtime files("./path/to/ojdbc-6.jar")
+	compile "com.marklogic:marklogic-spring-batch-core:1.4.0"
+	compile "com.marklogic:spring-batch-rdbms:1.4.0"
 
 	// Forcing Spring to use logback instead of commons-logging
 	runtime "ch.qos.logback:logback-classic:1.1.8"
 	runtime group: "org.slf4j", name: "jcl-over-slf4j", version: "1.7.22"
 	runtime group: "org.slf4j", name: "slf4j-api", version: "1.7.22"
+
+	// Using H2 as a sample database; can pull its JDBC driver from a Maven repository
+	testRuntime "com.h2database:h2:1.4.193"
+
+	// Can reference a local JDBC driver like this (Oracle, along with others, do not publish their JDBC driver to a public repo)
+	// runtime files("./path/to/ojdbc-6.jar")
 }
 
 task migrate(type: JavaExec) {
 	description = "Run the migration program"
-	classpath = sourceSets.main.runtimeClasspath
-	main = "org.example.MigrationMain"
+	classpath = sourceSets.test.runtimeClasspath
+	main = "org.example.Main"
 	args = [
-		"--config", "org.example.MigrationConfig",
-		"--chunk", chunk,
-		"--hosts", hosts,
+		"--host", host,
 		"--port", port,
 		"--username", username,
 		"--password", password,
-		"--database", database,
-		"--auth", auth,
-		"--thread_count", thread_count,
-		"--jdbc_driver", jdbc_driver,
 		"--jdbc_url", jdbc_url,
+		"--jdbc_driver", jdbc_driver,
 		"--jdbc_username", jdbc_username,
 		"--jdbc_password", jdbc_password,
-		"--sql", sql,
-		"--root_local_name", root_local_name,
-		"--collections", collections,
-		"--permissions", permissions,
-		"--xcc", xcc,
 		"--all_tables", all_tables,
-		"--document_type", document_type
+		"--chunk_size", chunk_size,
+		"--collections", collections,
+		"--document_type", document_type,
+		"--output_uri_prefix", output_uri_prefix,
+		"--permissions", permissions,
+		"--root_local_name", root_local_name,
+		"--sql", sql,
+		"--thread_count", thread_count,
+		"--uri_id", uri_id
 	]
 }
 
 task help(type: JavaExec) {
 	description = "See a list of all supported command line arguments"
 	classpath = sourceSets.main.runtimeClasspath
-	main = "org.example.MigrationMain"
-	args = [
-		"--config", "org.example.MigrationConfig",
-		"--help"
-	]
+	main = "org.example.Main"
+	args = ["--help"]
 }
 
-task setupH2(type: JavaExec) {
-	description = "Setup a file-based instance of H2 with sample data; can remove this if not using H2"
-	classpath = configurations.runtime
+task loadH2Data(type: JavaExec) {
+	classpath = configurations.testRuntime
 	main = "org.h2.tools.RunScript"
 	args = [
-		"-url", "jdbc:h2:file:./h2data/sample",
+		"-url", "jdbc:h2:file:./data/h2/sample",
 		"-user", "sa",
-		"-password", "password",
-		"-script", "./h2setup.sql"
+		"-script", "./data/h2setup.sql"
 	]
 }
+migrate.dependsOn loadH2Data
