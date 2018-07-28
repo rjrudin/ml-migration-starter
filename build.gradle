@@ -1,6 +1,5 @@
 plugins {
 	id "java"
-	id "com.github.jk1.dependency-license-report" version "0.3.11"
 }
 
 repositories {
@@ -13,6 +12,10 @@ dependencies {
 	// Core dependencies needed for using Spring Batch, Spring JDBC, and marklogic-spring-batch
 	compile "com.marklogic:marklogic-spring-batch-core:1.4.2"
 	compile "com.marklogic:spring-batch-rdbms:1.4.2"
+	compile "org.springframework.data:spring-data-jpa:2.0.9.RELEASE"
+	compile "org.hibernate:hibernate-core:5.3.3.Final"
+
+	runtime "mysql:mysql-connector-java:8.0.11"
 
 	// Forcing Spring to use logback instead of commons-logging
 	runtime "ch.qos.logback:logback-classic:1.1.8"

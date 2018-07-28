@@ -87,7 +87,6 @@ public class MigrationConfig {
 			r.setRowMapper(new ColumnMapRowMapper());
 			r.setDataSource(dataSource);
 			r.setSql(sql);
-			r.setRowMapper(new ColumnMapRowMapper());
 			reader = r;
 		}
 
