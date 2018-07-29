@@ -18,7 +18,13 @@ public class TableQueryMain {
 	private static ColumnMapSerializer columnMapSerializer = new JacksonColumnMapSerializer();
 	private static ColumnMapRowMapper columnMapRowMapper = new ColumnMapRowMapper();
 
-	public static void main(String[] args) throws Exception {
+	/**
+	 * So the query in TableQuery is used to populate the Reader. Processor can do whatever. The Writer then gets a
+	 * chunk of column maps and hands those off to a thread. The thread then processes each child query to fully
+	 * populate each column map, then serializes each one to JSON to write it off.
+	 * @param args
+	 */
+	public static void main(String[] args) {
 		DriverManagerDataSource ds = new DriverManagerDataSource(
 			"jdbc:mysql://localhost:3306/sakila?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC",
 			"root", "password");

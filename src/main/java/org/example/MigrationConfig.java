@@ -3,6 +3,9 @@ package org.example;
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.document.DocumentWriteOperation;
+import com.marklogic.client.ext.batch.RestBatchWriter;
+import com.marklogic.rdbms.migration.TableQuery;
+import com.marklogic.rdbms.migration.TableQueryWriter;
 import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.JacksonColumnMapSerializer;
@@ -21,6 +24,7 @@ import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.util.Map;
@@ -67,6 +71,14 @@ public class MigrationConfig {
 	                 @Value("#{jobParameters['thread_count']}") Integer threadCount,
 	                 @Value("#{jobParameters['uri_id']}") String uriId) {
 
+		// TODO Build this from configuration
+		TableQuery customerQuery = new TableQuery("select * from Customer", "customer_id", null, "customer");
+		//tableQuery.addChildQuery(new TableQuery("select * from Payment", "payment_id", "customer_id", "payments"));
+		TableQuery rentalQuery = new TableQuery("select * from Rental", "rental_id", "customer_id", "rentals");
+		customerQuery.addChildQuery(rentalQuery);
+		TableQuery paymentQuery = new TableQuery("select * from Payment", "payment_id", "rental_id", "payments");
+		rentalQuery.addChildQuery(paymentQuery);
+
 		// Construct a simple DataSource that Spring Batch will use to connect to an RDBMS
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setDriverClassName(jdbcDriver);
@@ -86,7 +98,7 @@ public class MigrationConfig {
 			JdbcCursorItemReader<Map<String, Object>> r = new JdbcCursorItemReader<Map<String, Object>>();
 			r.setRowMapper(new ColumnMapRowMapper());
 			r.setDataSource(dataSource);
-			r.setSql(sql);
+			r.setSql(customerQuery.getQuery());
 			reader = r;
 		}
 
@@ -100,41 +112,43 @@ public class MigrationConfig {
 
 		// marklogic-spring-batch component for converting a Spring ColumnMap into an XML or JSON document
 		// that can be written to MarkLogic
-		ColumnMapProcessor processor = new ColumnMapProcessor(serializer, new ColumnMapUriGenerator(uriId));
-		if (rootLocalName != null) {
-			processor.setRootLocalName(rootLocalName);
-		}
-		if (collections != null) {
-			processor.setCollections(collections.split(","));
-		}
-		if (permissions != null) {
-			processor.setPermissions(permissions.split(","));
-		}
+//		ColumnMapProcessor processor = new ColumnMapProcessor(serializer, new ColumnMapUriGenerator(uriId));
+//		if (rootLocalName != null) {
+//			processor.setRootLocalName(rootLocalName);
+//		}
+//		if (collections != null) {
+//			processor.setCollections(collections.split(","));
+//		}
+//		if (permissions != null) {
+//			processor.setPermissions(permissions.split(","));
+//		}
 
 		// marklogic-spring-batch component for generating a URI for a document
-		DefaultUriTransformer uriTransformer = new DefaultUriTransformer();
-		if (documentType != null && documentType.toLowerCase().equals("json")) {
-			uriTransformer.setOutputUriSuffix(".json");
-		} else {
-			uriTransformer.setOutputUriSuffix(".xml");
-		}
-		uriTransformer.setOutputUriPrefix(outputUriPrefix);
+//		DefaultUriTransformer uriTransformer = new DefaultUriTransformer();
+//		if (documentType != null && documentType.toLowerCase().equals("json")) {
+//			uriTransformer.setOutputUriSuffix(".json");
+//		} else {
+//			uriTransformer.setOutputUriSuffix(".xml");
+//		}
+//		uriTransformer.setOutputUriPrefix(outputUriPrefix);
 
 		// Construct a DatabaseClient to connect to MarkLogic. Additional command line arguments can be added to
 		// further customize this.
 		DatabaseClient client = DatabaseClientFactory.newClient(host, port, new DatabaseClientFactory.DigestAuthContext(username, password));
 
 		// Spring Batch ItemWriter for writing documents to MarkLogic
-		MarkLogicItemWriter writer = new MarkLogicItemWriter(client);
-		writer.setUriTransformer(uriTransformer);
-		writer.setThreadCount(threadCount);
-		writer.setBatchSize(chunkSize);
+//		MarkLogicItemWriter writer = new MarkLogicItemWriter(client);
+//		writer.setUriTransformer(uriTransformer);
+//		writer.setThreadCount(threadCount);
+//		writer.setBatchSize(chunkSize);
+
+		TableQueryWriter writer = new TableQueryWriter(customerQuery, new RestBatchWriter(client), new JdbcTemplate(dataSource));
 
 		// Return a step with the reader, processor, and writer constructed above.
 		return stepBuilderFactory.get("step1")
-			.<Map<String, Object>, DocumentWriteOperation>chunk(chunkSize)
+			.<Map<String, Object>, Map<String, Object>>chunk(chunkSize)
 			.reader(reader)
-			.processor(processor)
+			//.processor(processor)
 			.writer(writer)
 			.build();
 	}
