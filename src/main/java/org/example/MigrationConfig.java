@@ -73,7 +73,6 @@ public class MigrationConfig {
 
 		// TODO Build this from configuration
 		TableQuery customerQuery = new TableQuery("select * from Customer", "customer_id", null, "customer");
-		//tableQuery.addChildQuery(new TableQuery("select * from Payment", "payment_id", "customer_id", "payments"));
 		TableQuery rentalQuery = new TableQuery("select * from Rental", "rental_id", "customer_id", "rentals");
 		customerQuery.addChildQuery(rentalQuery);
 		TableQuery paymentQuery = new TableQuery("select * from Payment", "payment_id", "rental_id", "payments");

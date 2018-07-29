@@ -66,7 +66,7 @@ public class TableQueryWriter extends LoggingObject implements ItemWriter<Map<St
 
 	@Override
 	public void write(List<? extends Map<String, Object>> items) {
-		applyChildQueries(items);
+		applyChildQueries(this.tableQuery, items);
 
 		List<DocumentWriteOperation> documentWriteOperations = new ArrayList<>();
 		for (Map<String, Object> item : items) {
@@ -92,12 +92,12 @@ public class TableQueryWriter extends LoggingObject implements ItemWriter<Map<St
 		this.batchWriter.write(documentWriteOperations);
 	}
 
-	private void applyChildQueries(List<? extends Map<String, Object>> parentRows) {
-		for (TableQuery childTableQuery : tableQuery.getChildQueries()) {
+	private void applyChildQueries(TableQuery parentTableQuery, List<? extends Map<String, Object>> parentRows) {
+		for (TableQuery childTableQuery : parentTableQuery.getChildQueries()) {
 			// Construct a map based on primary key so we can easily get the primary keys and populate the maps with kids later
 			Map<Object, Map<String, Object>> parentMap = new LinkedHashMap<>();
 			for (Map<String, Object> parentRow : parentRows) {
-				Object parentId = parentRow.get(tableQuery.getPrimaryKeyColumnName());
+				Object parentId = parentRow.get(parentTableQuery.getPrimaryKeyColumnName());
 				parentMap.put(parentId, parentRow);
 			}
 
@@ -123,6 +123,7 @@ public class TableQueryWriter extends LoggingObject implements ItemWriter<Map<St
 			}
 			childQuery += childInClause;
 
+			logger.info("Child query: " + childQuery);
 			List<Map<String, Object>> childRows = jdbcTemplate.query(childQuery, columnMapRowMapper);
 
 			// Now add each child map to the correct parent map
@@ -142,6 +143,8 @@ public class TableQueryWriter extends LoggingObject implements ItemWriter<Map<St
 				// TODO Remove the foreign key from the child row?
 				kids.add(childRow);
 			}
+
+			applyChildQueries(childTableQuery, childRows);
 		}
 	}
 }
