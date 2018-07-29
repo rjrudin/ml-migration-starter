@@ -6,6 +6,7 @@ import com.marklogic.spring.batch.columnmap.JacksonColumnMapSerializer;
 import org.example.MigrationConfig;
 import org.junit.Before;
 import org.springframework.batch.core.JobParameter;
+import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -38,8 +39,17 @@ public abstract class AbstractTest extends AbstractSpringTest {
 		this.jdbcTemplate = new JdbcTemplate(ds);
 	}
 
-	protected Map<String, JobParameter> buildJobParameterMap() {
+	protected void runJob(String migrationJson) {
+		try {
+			jobLauncherTestUtils.launchJob(new JobParameters(buildJobParameterMap(migrationJson)));
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+	protected Map<String, JobParameter> buildJobParameterMap(String migrationJson) {
 		Map<String, JobParameter> params = new HashMap<>();
+		params.put("migration_json", new JobParameter(migrationJson));
 		params.put("host", new JobParameter(environment.getProperty("mlHost")));
 		params.put("port", new JobParameter(Long.parseLong(environment.getProperty("mlTestRestPort"))));
 		params.put("username", new JobParameter(environment.getProperty("mlUsername")));

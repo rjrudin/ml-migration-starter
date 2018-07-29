@@ -15,6 +15,10 @@ public class TableQuery {
 
 	private List<TableQuery> childQueries = new ArrayList<>();
 
+	public TableQuery() {
+		// Needed for JSON deserialization
+	}
+	
 	public TableQuery(String query, String primaryKeyColumnName, String foreignKeyColumnName, String elementName) {
 		this.query = query;
 		this.primaryKeyColumnName = primaryKeyColumnName;

@@ -1,5 +1,6 @@
 package org.example;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.ext.batch.RestBatchWriter;
@@ -62,17 +63,17 @@ public class MigrationConfig {
 	                 @Value("#{jobParameters['document_type']}") String documentType,
 	                 @Value("#{jobParameters['output_uri_prefix']}") String outputUriPrefix,
 	                 @Value("#{jobParameters['permissions']}") String permissions,
-	                 @Value("#{jobParameters['root_local_name']}") String rootLocalName,
-	                 @Value("#{jobParameters['sql']}") String sql,
+	                 @Value("#{jobParameters['migration_json']}") String migrationJson,
 	                 @Value("#{jobParameters['thread_count']}") Integer threadCount,
-	                 @Value("#{jobParameters['uri_id']}") String uriId) {
+	                 @Value("#{jobParameters['uri_id']}") String uriId) throws Exception {
 
-		// TODO Build this from configuration
-		TableQuery customerQuery = new TableQuery("select * from Customer", "customer_id", null, "customer");
-		TableQuery rentalQuery = new TableQuery("select * from Rental", "rental_id", "customer_id", "rentals");
-		customerQuery.addChildQuery(rentalQuery);
-		TableQuery paymentQuery = new TableQuery("select * from Payment", "payment_id", "rental_id", "payments");
-		rentalQuery.addChildQuery(paymentQuery);
+//		TableQuery customerQuery = new TableQuery("select * from Customer", "customer_id", null, "customer");
+//		TableQuery rentalQuery = new TableQuery("select * from Rental", "rental_id", "customer_id", "rentals");
+//		customerQuery.addChildQuery(rentalQuery);
+//		TableQuery paymentQuery = new TableQuery("select * from Payment", "payment_id", "rental_id", "payments");
+//		rentalQuery.addChildQuery(paymentQuery);
+
+		TableQuery tableQuery = new ObjectMapper().readerFor(TableQuery.class).readValue(migrationJson);
 
 		// Construct a simple DataSource that Spring Batch will use to connect to an RDBMS
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
@@ -93,7 +94,7 @@ public class MigrationConfig {
 			JdbcCursorItemReader<Map<String, Object>> r = new JdbcCursorItemReader<Map<String, Object>>();
 			r.setRowMapper(new ColumnMapRowMapper());
 			r.setDataSource(dataSource);
-			r.setSql(customerQuery.getQuery());
+			r.setSql(tableQuery.getQuery());
 			reader = r;
 		}
 
@@ -137,7 +138,7 @@ public class MigrationConfig {
 //		writer.setThreadCount(threadCount);
 //		writer.setBatchSize(chunkSize);
 
-		TableQueryWriter writer = new TableQueryWriter(customerQuery, new RestBatchWriter(client), new JdbcTemplate(dataSource));
+		TableQueryWriter writer = new TableQueryWriter(tableQuery, new RestBatchWriter(client), new JdbcTemplate(dataSource));
 
 		// Return a step with the reader, processor, and writer constructed above.
 		return stepBuilderFactory.get("step1")
