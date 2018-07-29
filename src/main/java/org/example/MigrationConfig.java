@@ -99,10 +99,10 @@ public class MigrationConfig {
 
 		// marklogic-spring-batch component that is used to write a Spring ColumnMap to an XML or JSON document
 		ColumnMapSerializer serializer = null;
-		if (documentType != null && documentType.toLowerCase().equals("json")) {
-			serializer = new JacksonColumnMapSerializer();
-		} else {
+		if (documentType != null && documentType.toLowerCase().equals("xml")) {
 			serializer = new DefaultStaxColumnMapSerializer();
+		} else {
+			serializer = new JacksonColumnMapSerializer();
 		}
 
 		// marklogic-spring-batch component for converting a Spring ColumnMap into an XML or JSON document
