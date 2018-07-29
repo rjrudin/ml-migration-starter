@@ -1,5 +1,7 @@
 package com.example.entity.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -31,6 +33,7 @@ public class City implements Serializable {
 	//bi-directional many-to-one association to Country
 	@ManyToOne
 	@JoinColumn(name="country_id")
+	@JsonIgnore
 	private Country country;
 
 	public City() {

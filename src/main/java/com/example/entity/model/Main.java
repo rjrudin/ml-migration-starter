@@ -9,6 +9,13 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import java.util.Properties;
 
+/**
+ * Problems
+ * - Have to use a tool like Eclipse to generate classes
+ * - Generated classes can have dozens of errors in them that require manual fixing
+ * - Many-to-one relationships are fetch-eager by default
+ * - Infinite recursion problems with JSON due to bidirectional relationships, requires manual fixing
+ */
 public class Main {
 
 	public static void main(String[] args) throws Exception {
@@ -36,9 +43,11 @@ public class Main {
 
 		ObjectMapper objectMapper = new ObjectMapper();
 
-		for (Object o : em.createQuery("select c from Country c LEFT JOIN FETCH c.cities").setMaxResults(100).getResultList()) {
-			Country a = (Country)o;
-			System.out.println(a.getCities().get(0).getCity());
+		for (Object o : em.createQuery("select c from Country c LEFT JOIN FETCH c.cities").setMaxResults(3).getResultList()) {
+			Country a = (Country) o;
+			em.detach(a);
+			String json = objectMapper.writeValueAsString(a);
+			System.out.println(json);
 		}
 	}
 }
