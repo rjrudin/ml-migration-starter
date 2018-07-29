@@ -1,4 +1,4 @@
-package com.marklogic.rdbms.migration;
+package com.marklogic.migration.rdbms;
 
 import com.marklogic.client.document.DocumentWriteOperation;
 import com.marklogic.client.ext.batch.BatchWriter;
@@ -23,6 +23,10 @@ import java.util.*;
  * TODO Multi-thread this later.
  * <p>
  * TODO Add callback interface for the list after child queries have been applied.
+ *
+ * So we want this writer to use both a thread pool, and then to apply child queries. Once the child queries are
+ * applied, it'll call a callback interface to do something with them. This writer will need to wait for each callback
+ * to finish, so the callback interface needs some notion of "I'm done!".
  */
 public class TableQueryWriter extends LoggingObject implements ItemWriter<Map<String, Object>>, ItemStream {
 

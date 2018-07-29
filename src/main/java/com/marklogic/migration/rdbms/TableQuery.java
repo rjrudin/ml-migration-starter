@@ -1,4 +1,4 @@
-package com.marklogic.rdbms.migration;
+package com.marklogic.migration.rdbms;
 
 import java.util.ArrayList;
 import java.util.List;

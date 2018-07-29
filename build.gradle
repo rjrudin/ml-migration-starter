@@ -1,5 +1,6 @@
 plugins {
 	id "java"
+	id "com.marklogic.ml-gradle" version "3.8.2"
 }
 
 repositories {
@@ -24,6 +25,10 @@ dependencies {
 
 	// Using H2 as a sample database; can pull its JDBC driver from a Maven repository
 	testRuntime "com.h2database:h2:1.4.193"
+
+	// For running ml-unit-test tests via JUnit
+	testCompile "com.marklogic:ml-junit:3.0.0"
+	testCompile "org.springframework:spring-test:5.0.8.RELEASE"
 
 	// Can reference a local JDBC driver like this (Oracle, along with others, do not publish their JDBC driver to a public repo)
 	// runtime files("./path/to/ojdbc-6.jar")
