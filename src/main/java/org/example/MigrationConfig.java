@@ -67,12 +67,6 @@ public class MigrationConfig {
 	                 @Value("#{jobParameters['thread_count']}") Integer threadCount,
 	                 @Value("#{jobParameters['uri_id']}") String uriId) throws Exception {
 
-//		TableQuery customerQuery = new TableQuery("select * from Customer", "customer_id", null, "customer");
-//		TableQuery rentalQuery = new TableQuery("select * from Rental", "rental_id", "customer_id", "rentals");
-//		customerQuery.addChildQuery(rentalQuery);
-//		TableQuery paymentQuery = new TableQuery("select * from Payment", "payment_id", "rental_id", "payments");
-//		rentalQuery.addChildQuery(paymentQuery);
-
 		TableQuery tableQuery = new ObjectMapper().readerFor(TableQuery.class).readValue(migrationJson);
 
 		// Construct a simple DataSource that Spring Batch will use to connect to an RDBMS

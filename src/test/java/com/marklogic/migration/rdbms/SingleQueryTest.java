@@ -5,7 +5,7 @@ import org.junit.Test;
 public class SingleQueryTest extends AbstractTest {
 
 	@Test
-	public void test() throws Exception {
+	public void test() {
 		String migrationJson = "{\"query\":\"select * from Customer where customer_id=1\"," +
 			"\"primaryKeyColumnName\":\"customer_id\"," +
 			"\"elementName\":\"customer\"," +

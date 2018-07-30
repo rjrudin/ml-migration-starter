@@ -127,7 +127,7 @@ public class TableQueryWriter extends LoggingObject implements ItemWriter<Map<St
 			}
 			childQuery += childInClause;
 
-			logger.info("Child query: " + childQuery);
+			//logger.info("Child query: " + childQuery);
 			List<Map<String, Object>> childRows = jdbcTemplate.query(childQuery, columnMapRowMapper);
 
 			// Now add each child map to the correct parent map
