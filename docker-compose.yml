@@ -9,6 +9,7 @@ services:
       target: /data
     ports:
     - 7997-8020:7997-8020/tcp
+    - 8855-8856:8855-8856/tcp
   gradle:
     image: gradle:alpine
     depends_on:
