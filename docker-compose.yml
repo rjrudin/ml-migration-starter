@@ -1,0 +1,50 @@
+version: "3.6"
+
+services:
+  marklogic:
+    image: marklogic.azurecr.io/marklogic:latest
+    volumes:
+    - type: volume
+      source: marklogic_data
+      target: /data
+    ports:
+    - 7997-8020:7997-8020/tcp
+  gradle:
+    image: gradle:alpine
+    depends_on:
+      - marklogic
+    volumes:
+    - type: bind
+      source: .
+      target: /home/gradle/project
+    working_dir: /home/gradle/project
+    command: "gradle -PmlHost=marklogic mlInit mlInstallAdmin mlDeploy"
+  mysql:
+    image: mysql:8
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+    - MYSQL_ROOT_PASSWORD=password
+    volumes:
+    - type: bind
+      source: ./data/sakila-db
+      target: /docker-entrypoint-initdb.d
+    ports:
+    - 3306:3306
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    environment:
+    - PMA_ARBITRARY=1
+    - PMA_HOST=mysql
+    - PMA_PORT=3306
+    depends_on:
+    - mysql
+    links:
+    - mysql:db
+    restart: always
+    ports:
+    - 8080:80
+    volumes:
+    - /sessions
+
+volumes:
+  marklogic_data:
