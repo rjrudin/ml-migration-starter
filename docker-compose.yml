@@ -33,7 +33,6 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     environment:
-    - PMA_ARBITRARY=1
     - PMA_HOST=mysql
     - PMA_PORT=3306
     depends_on:
