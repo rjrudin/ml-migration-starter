@@ -52,7 +52,7 @@ task migrate(type: JavaExec) {
 	]
 }
 
-task help(type: JavaExec) {
+task migrateHelp(type: JavaExec) {
 	description = "See a list of all supported command line arguments"
 	classpath = sourceSets.main.runtimeClasspath
 	main = "org.example.Main"

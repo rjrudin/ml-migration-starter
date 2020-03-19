@@ -60,7 +60,7 @@ Or just modify gradle.properties and start building your own application.
 
 You can also see all the supported arguments:
 
-./gradlew help
+./gradlew migrateHelp
   
 
 ## How do I make this work with my own database?
