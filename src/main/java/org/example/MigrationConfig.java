@@ -3,6 +3,7 @@ package org.example;
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.document.DocumentWriteOperation;
+import com.marklogic.client.io.Format;
 import com.marklogic.spring.batch.columnmap.ColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.DefaultStaxColumnMapSerializer;
 import com.marklogic.spring.batch.columnmap.JacksonColumnMapSerializer;
@@ -130,7 +131,12 @@ public class MigrationConfig {
 		writer.setUriTransformer(uriTransformer);
 		writer.setThreadCount(threadCount);
 		writer.setBatchSize(chunkSize);
-
+		if (documentType != null && documentType.toLowerCase().equals("json")) {
+			writer.setContentFormat(Format.JSON);
+		} else {
+			writer.setContentFormat(Format.XML);
+		}
+		
 		// Return a step with the reader, processor, and writer constructed above.
 		return stepBuilderFactory.get("step1")
 			.<Map<String, Object>, DocumentWriteOperation>chunk(chunkSize)
