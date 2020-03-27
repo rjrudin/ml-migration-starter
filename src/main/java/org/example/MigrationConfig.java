@@ -1,5 +1,8 @@
 package org.example;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.document.DocumentWriteOperation;
@@ -95,7 +98,10 @@ public class MigrationConfig {
 		// marklogic-spring-batch component that is used to write a Spring ColumnMap to an XML or JSON document
 		ColumnMapSerializer serializer = null;
 		if (documentType != null && documentType.toLowerCase().equals("json")) {
-			serializer = new JacksonColumnMapSerializer();
+			ObjectMapper objectMapper = new ObjectMapper();
+			objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+			objectMapper.setDateFormat(new StdDateFormat().withColonInTimeZone(true));
+			serializer = new JacksonColumnMapSerializer(objectMapper);
 		} else {
 			serializer = new DefaultStaxColumnMapSerializer();
 		}
@@ -136,7 +142,7 @@ public class MigrationConfig {
 		} else {
 			writer.setContentFormat(Format.XML);
 		}
-		
+
 		// Return a step with the reader, processor, and writer constructed above.
 		return stepBuilderFactory.get("step1")
 			.<Map<String, Object>, DocumentWriteOperation>chunk(chunkSize)
